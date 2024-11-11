@@ -968,11 +968,11 @@ text-align: left;
 
 .input input[type="text"] {
   width: 90%;
-  padding: 0.5rem;
+  padding: 0.9rem;
   background-color: #202123;
   border: none;
   border-radius: 0.5rem;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
 }
 
 .input button {
