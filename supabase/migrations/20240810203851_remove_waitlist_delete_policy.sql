@@ -1,1 +1,0 @@
-drop policy if exists "Users can only delete their own waitlist record." on public.deploy_waitlist;

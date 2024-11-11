@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="shortcut icon" href="https://chat.openai.com/favicon.ico" type="image/x-icon">
+    <title>New chat</title>
+    <style>
+        :root {
+            --font-sans: 'Inter', sans-serif;
+            background-color: black;
+        }
+        
+        body {
+            font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            background-color: black;
+        }
+        .right2 { display: none; }
+        .container {
+            display: flex;
+            height: 100vh;
+            background-color: black; /* Changed to black */
+            color: white;
+        }
+        .left {
+            width: 20%;
+            background-color: black;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .middle {
+            width: 40%;
+            height: 85%;
+            background-color: #202123; /* Middle section color */
+            padding: 1rem;
+            overflow-y: auto;
+            border-radius: 10px; 
+            margin: auto;
+        }
+        .right {
+            flex-grow: 1;
+            background-color: black;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .button {
+            width: 90%;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border: 1px solid #555;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #444;
+        }
+
+        .chat-history, .option-items {
+            margin-top: 1rem;
+        }
+
+        .input {
+            display: flex;
+            width: 100%;
+            margin-top: 41.5rem;
+            gap: 0.5rem;
+            align-items: center;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .input input[type="text"] {
+            width: 90%;
+            padding: 0.5rem;
+            background-color: #202123;
+            border: none;
+            border-radius: 0.5rem;
+        }
+
+        .input button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="left">
+            <div class="section-title">New Model</div>
+            <button class="button" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Model
+            </button>
+            <div class="chat-history">
+                <div class="text-xs text-gray-400">Today</div>
+                {% for chat in myChats %}
+                <div class="button">{{ chat.question }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="middle">
+            <div class="section-title">Options & Databases</div>
+            <div class="option-items">
+                <div class="button">Option 1</div>
+                <div class="button">Option 2</div>
+                <div class="button">Option 3</div>
+                <hr class="my-4 border-gray-500">
+                <button class="button">New Database</button>
+                <div class="button">Database 1</div>
+                <div class="button">Database 2</div>
+            </div>
+        </div>
+        <div class="right">
+            <div class="section-title">Chat with the model</div>
+            <div class="input">
+                <input type="text" placeholder="Send a Message">
+                <button>
+                    <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/script.js"></script>
+</body>
+
+</html>
