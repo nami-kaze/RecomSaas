@@ -14,19 +14,44 @@
 <body>
     <div class="container">
         <div class="left">
-            <div class="section-title">RecForage</div>
-            <button class="button" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                New Model
-            </button>
-            <div class="chat-history">
+            <!-- Top section -->
+            <div style="flex: 0 0 auto;">
+                <div class="section-title">RecForage</div>
+                <button class="button" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    New Model
+                </button>
+            </div>
+
+            <!-- Middle section (chat history) -->
+            <div style="flex: 1 1 auto; overflow-y: auto; min-height: 0;">
                 <div class="text-xs text-gray-400">Today</div>
-                {% for chat in myChats %}
-                <div class="button">{{ chat.question }}</div>
-                {% endfor %}
+                <div class="chat-history">
+                    {% for chat in myChats %}
+                    <div class="button">{{ chat.question }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Bottom section -->
+            <div style="flex: 0 0 auto; bottom:8px; padding-top: 1px;">
+                <button class="button theme-toggle" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    Toggle theme
+                </button>
             </div>
         </div>
 
@@ -130,6 +155,48 @@
                 checkboxContainer.appendChild(checkbox);
                 checkboxContainer.appendChild(label);
             });
+        }
+
+        // Theme toggling functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial theme
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+
+            // Add click handler to theme toggle button
+            const themeToggle = document.querySelector('.theme-toggle');
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+            });
+        });
+
+        function updateThemeIcon(theme) {
+            const themeToggle = document.querySelector('.theme-toggle');
+            if (theme === 'dark') {
+                // Sun icon for dark mode (clicking will switch to light)
+                themeToggle.querySelector('svg').innerHTML = `
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                `;
+            } else {
+                // Moon icon for light mode (clicking will switch to dark)
+                themeToggle.querySelector('svg').innerHTML = `
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                `;
+            }
         }
     </script>
 </body>
