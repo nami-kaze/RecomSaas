@@ -56,15 +56,41 @@
         </div>
 
         <div class="middle">
-            <!-- Drag-and-Drop Zone -->
-            <div class="drop-zone" id="drop-zone">
-                <input type="file" id="fileInput" accept=".csv" style="display: none;">
-                <div class="icon">+</div>
-                <p>Drag and Drop CSV File</p>
-                <p style="font-size: 0.8rem; opacity: 0.6; transition: opacity 0.3s;">or click to upload</p>
+            <!-- Add tabs for upload options -->
+            <div class="upload-tabs">
+                <button class="button tab-btn active" data-tab="file">File Upload</button>
+                <button class="button tab-btn" data-tab="kaggle">Kaggle Dataset</button>
             </div>
-    
-            <!-- Mode Selection -->
+
+            <!-- File Upload Section -->
+            <div id="file-upload" class="upload-section">
+                <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                    <input type="file" id="file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+                    <div class="icon">📁</div>
+                    <p>Drag and drop your CSV file here or click to browse</p>
+                </div>
+            </div>
+
+            <!-- Kaggle Dataset Section -->
+            <div id="kaggle-upload" class="upload-section">
+                <div class="kaggle-form">
+                    <div class="input-group">
+                        <label class="label">Kaggle API Username</label>
+                        <input type="text" class="kaggle-input" placeholder="Enter your Kaggle username">
+                    </div>
+                    <div class="input-group">
+                        <label class="label">Kaggle API Key</label>
+                        <input type="password" class="kaggle-input" placeholder="Enter your Kaggle API key">
+                    </div>
+                    <div class="input-group">
+                        <label class="label">Dataset Path</label>
+                        <input type="text" class="kaggle-input" placeholder="username/dataset-name">
+                        <p class="helper-text">Example: netflix/netflix-shows</p>
+                    </div>
+                    <button type="button" class="kaggle-submit button">Import Dataset</button>
+                </div>
+            </div>
+
             <div class="label">Select your choice of model:</div>
             <div class="select-wrapper">
                 <select>
@@ -95,110 +121,6 @@
         </div>
     </div>
     <script src="/static/js/script.js"></script>
-    <script>
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('fileInput');
-        const checkboxContainer = document.getElementById('checkbox-container');
-
-        // Open file input when clicking the drop zone
-        dropZone.addEventListener('click', () => fileInput.click());
-
-        // Handle file input change event
-        fileInput.addEventListener('change', handleFileUpload);
-
-        function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (file && file.type === 'text/csv') {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const csvData = e.target.result;
-            const headers = getCSVHeaders(csvData);
-            populateCheckboxes(headers);
-        };
-        reader.readAsText(file);
-
-        // Update the drop zone with the file name and CSV icon
-        dropZone.innerHTML = `
-            <div class="drop-zone-content">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="csv-icon">
-                    <path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM9 14v2h6v-2H9zM9 10v2h6V10H9z"></path>
-                </svg>
-                <p class="file-name">${file.name}</p>
-            </div>
-            <p style="font-size: 0.8rem; opacity: 0.6; text-align: center;">or click to upload</p>
-        `;
-    } else {
-        alert("Please upload a valid CSV file.");
-    }
-}
-
-
-        // Extract headers from CSV
-        function getCSVHeaders(csvData) {
-            const [headerLine] = csvData.split('\n');
-            return headerLine.split(',').map(header => header.trim());
-        }
-
-        // Populate checkboxes based on headers
-        function populateCheckboxes(headers) {
-            checkboxContainer.innerHTML = ''; // Clear any existing checkboxes
-            headers.forEach(header => {
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.value = header;
-                checkbox.id = `checkbox-${header}`;
-
-                const label = document.createElement('label');
-                label.htmlFor = `checkbox-${header}`;
-                label.textContent = header;
-
-                checkboxContainer.appendChild(checkbox);
-                checkboxContainer.appendChild(label);
-            });
-        }
-
-        // Theme toggling functionality
-        document.addEventListener('DOMContentLoaded', () => {
-            // Set initial theme
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            updateThemeIcon(savedTheme);
-
-            // Add click handler to theme toggle button
-            const themeToggle = document.querySelector('.theme-toggle');
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                updateThemeIcon(newTheme);
-            });
-        });
-
-        function updateThemeIcon(theme) {
-            const themeToggle = document.querySelector('.theme-toggle');
-            if (theme === 'dark') {
-                // Sun icon for dark mode (clicking will switch to light)
-                themeToggle.querySelector('svg').innerHTML = `
-                    <circle cx="12" cy="12" r="5"></circle>
-                    <line x1="12" y1="1" x2="12" y2="3"></line>
-                    <line x1="12" y1="21" x2="12" y2="23"></line>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                    <line x1="1" y1="12" x2="3" y2="12"></line>
-                    <line x1="21" y1="12" x2="23" y2="12"></line>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                `;
-            } else {
-                // Moon icon for light mode (clicking will switch to dark)
-                themeToggle.querySelector('svg').innerHTML = `
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                `;
-            }
-        }
-    </script>
 </body>
 
 </html>

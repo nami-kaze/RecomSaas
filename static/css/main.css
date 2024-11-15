@@ -675,17 +675,26 @@ body {
 }
 
 .drop-zone {
-border: 2px dashed #565656;
-border-radius: 10px;
-padding: 2rem;
-margin-bottom: 1rem;
-cursor: pointer;
-height: 20rem;
-text-align: center;
-display: flex;
-justify-content: center;
-align-items: center;
-flex-direction: column;
+    border: 2px dashed #565656;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    height: 20rem;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    transition: border-color 0.3s ease;
+}
+
+.drop-zone.highlight {
+    border-color: #ffffff;
+}
+
+[data-theme="light"] .drop-zone.highlight {
+    border-color: #000000;
 }
 
 .drop-zone .drop-zone-content {
@@ -726,6 +735,7 @@ opacity: 0.8;
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
   color: #b0b0b0;
+  opacity: 0.8;
 }
 
 .select-wrapper, .checkbox-container {
@@ -735,12 +745,13 @@ opacity: 0.8;
 select {
   width: 100%;
   padding: 0.5rem;
-  background-color: #40444b;
+  background-color: #000000;
   border: none;
   border-radius: 5px;
-  color: #ffffff;
   appearance: none;
   font-size: 1rem;
+  opacity: 0.8;
+  color: var(--text-primary);
 }
 
 .checkbox-container {
@@ -927,7 +938,7 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
 [data-theme="light"] .compile-button {
     background-color: #ffffff;
     color: #000000;
-    border: none;
+    border: 1px solid #b0b0b0;
 }
 
 [data-theme="light"] .compile-button:hover {
@@ -940,4 +951,112 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
 
 [data-theme="light"] .input button:hover svg {
     opacity: 0.7;
+}
+
+.upload-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+    width: 100%;
+    padding-top: 0%;
+}
+
+.tab-btn {
+    padding-left: 20px;
+    padding-right: 20px;
+    border-radius: 3px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    gap: 10px;
+}
+
+.tab-btn.active {
+    background-color: #2d2d2d;
+}
+.tab-btn:hover {
+  opacity: 1; /* only text becomes fully opaque on hover */
+}
+
+/* Light mode overrides */
+
+
+[data-theme="light"] .tab-btn {
+    background-color: #f0f0f0;
+    color: black;
+    border: none;
+}
+
+[data-theme="light"] .tab-btn.active {
+    background-color: #e0e0e0;
+}
+
+[data-theme="light"] .tab-btn:hover {
+    background-color: #b0b0b0;  
+}
+
+/* Kaggle Form Styles */
+.kaggle-form {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.kaggle-input {
+    padding: 0.7rem;
+    border-radius: 0.5rem;
+    background-color: black;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    opacity: 0.8;
+}
+
+.helper-text {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-top: 0.25rem;
+}
+[data-theme="light"] .helper-text {
+ color: #000000;
+}
+
+.kaggle-submit {
+    background-color: #000000;
+    color: var(--text-primary);
+    padding: 0.7rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    width: 40%;
+    align-self: center;
+}
+
+.kaggle-submit:hover {
+    opacity: 1;
+}
+
+/* Light mode overrides */
+[data-theme="light"] .kaggle-input {
+    background-color:#e0e0e0 ;
+    border-color: #dddddd;
+
+}
+[data-theme="light"] .kaggle-submit:hover {
+  opacity: 1;
+  background-color: #dddddd; /* Added to prevent background color change on hover */
+}
+
+[data-theme="light"] .kaggle-submit {
+    background-color: #ffffff;
+    border: 1px solid #b0b0b0;
+    color: #000000;
 }
