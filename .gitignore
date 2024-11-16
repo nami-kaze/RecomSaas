@@ -1,6 +1,7 @@
 # python virtual environment
 menv/
 /menv/
+__pycache__/
 
 # dependencies
 node_modules
