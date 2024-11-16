@@ -47,11 +47,10 @@ function updateThemeIcon(theme) {
 
 // File Upload Handling
 function initializeFileUpload() {
-    // Open file input when clicking the drop zone
-    dropZone.addEventListener('click', () => fileInput.click());
-    
-    // Handle file input change event
-    fileInput.addEventListener('change', handleFileUpload);
+    // Ensure fileInput exists and add event listener
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+    }
 
     // Prevent default drag behaviors
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -72,6 +71,10 @@ function initializeFileUpload() {
     dropZone.addEventListener('drop', handleDrop, false);
 }
 
+function handleFileSelect(event) {
+    handleFileUpload(event);
+}
+
 function handleFileUpload(event) {
     const file = event.target.files[0];
     if (file && (file.type === 'text/csv' || file.name.endsWith('.csv'))) {
@@ -84,8 +87,9 @@ function handleFileUpload(event) {
             updateDropZoneUI(file.name);
         };
         reader.readAsText(file);
-    } else {
+    } else if (file) {
         alert("Please upload a valid CSV file.");
+        fileInput.value = '';
     }
 }
 
