@@ -1,7 +1,12 @@
 # python virtual environment
 menv/
 /menv/
+
+# Python cache files
 __pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
 
 # dependencies
 node_modules
