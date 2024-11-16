@@ -1,3 +1,6 @@
+# python virtual environment
+menv/
+/menv/
 
 # dependencies
 node_modules
