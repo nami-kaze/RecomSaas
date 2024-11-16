@@ -1038,16 +1038,19 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
     transition: opacity 0.3s ease;
     width: 40%;
     align-self: center;
+    border: none;
 }
 
 .kaggle-submit:hover {
     opacity: 1;
+    background-color: #000000;
 }
 
 /* Light mode overrides */
 [data-theme="light"] .kaggle-input {
     background-color:#e0e0e0 ;
     border-color: #dddddd;
+    color: #000000;
 
 }
 [data-theme="light"] .kaggle-submit:hover {
