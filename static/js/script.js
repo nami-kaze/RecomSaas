@@ -100,8 +100,19 @@ function updateDropZoneUI(fileName) {
                 <path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM9 14v2h6v-2H9zM9 10v2h6V10H9z"></path>
             </svg>
             <p class="file-name">${fileName}</p>
+            <p class="reupload-hint"></p>
         </div>
     `;
+
+    // Add click event listener to the drop zone after updating its content
+    const dropZoneContent = dropZone.querySelector('.drop-zone-content');
+    dropZoneContent.style.cursor = 'pointer';
+    
+    dropZoneContent.addEventListener('click', () => {
+        if (fileInput) {
+            fileInput.click();
+        }
+    });
 }
 
 // CSV Processing
