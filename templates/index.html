@@ -58,7 +58,7 @@
         </div>
 
         <div class="middle">
-            <!-- Add tabs for upload options -->
+            <!-- Tab buttons -->
             <div class="upload-tabs">
                 <button class="button tab-btn active" data-tab="file">File Upload</button>
                 <button class="button tab-btn" data-tab="kaggle">Kaggle Dataset</button>
@@ -66,10 +66,32 @@
 
             <!-- File Upload Section -->
             <div id="file-upload" class="upload-section">
+                <!-- File Drop Zone -->
                 <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
                     <input type="file" id="file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
                     <div class="icon">📁</div>
                     <p>Drag and drop your CSV file here or click to browse</p>
+                </div>
+
+                <!-- File Upload Model Selection -->
+                <div class="file-upload-options">
+                    <div class="label">Select your choice of model:</div>
+                    <div class="select-wrapper">
+                        <select id="file-model-select">
+                            <option value="" disabled selected>Choose a model</option>
+                            <option>Hybrid Model</option>
+                            <option>Collaborative Model</option>
+                            <option>Content-based Model</option>
+                        </select>
+                    </div>
+                    
+                    <!-- File Variables Section -->
+                    <div class="label">Variables of the dataset:</div>
+                    <div class="checkbox-container" id="checkbox-container">
+                        <!-- Checkboxes will be dynamically added here -->
+                    </div>
+                    
+                    <button class="compile-button" id="file-compile">Compile File Model</button>
                 </div>
             </div>
 
@@ -89,25 +111,27 @@
                         <input type="text" class="kaggle-input" placeholder="username/dataset-name">
                         <p class="helper-text">Example: netflix/netflix-shows</p>
                     </div>
-                    <button type="button" class="kaggle-submit button">Import Dataset</button>
+
+                    <!-- Kaggle Model Selection -->
+                    <div class="label">Select your choice of model:</div>
+                    <div class="select-wrapper">
+                        <select id="kaggle-model-select">
+                            <option value="" disabled selected>Choose a model</option>
+                            <option>Hybrid Model</option>
+                            <option>Collaborative Model</option>
+                            <option>Content-based Model</option>
+                        </select>
+                    </div>
+
+                    <!-- Kaggle Variables Section -->
+                    <div class="label">Variables of the dataset:</div>
+                    <div class="k-checkbox-container" id="k-checkbox-container">
+                        <!-- Checkboxes will be dynamically added here -->
+                    </div>
+
+                    <button class="compile-button" id="kaggle-compile">Compile Kaggle Model</button>
                 </div>
             </div>
-
-            <div class="label">Select your choice of model:</div>
-            <div class="select-wrapper">
-                <select>
-                    <option value="" disabled selected>Choose a model</option>
-                    <option>Hybrid Model</option>
-                    <option>Collaborative Model</option>
-                    <option>Content-based Model</option>
-                </select>
-            </div>
-            <div class="label">Variables of the dataset:</div>
-            <div class="checkbox-container" id="checkbox-container">
-                <!-- Checkboxes will be dynamically added here -->
-            </div>
-            <!-- Compile Button -->
-            <button class="compile-button">Compile</button>
         </div>
         <div class="right">
             <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
