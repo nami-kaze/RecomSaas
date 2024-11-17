@@ -1068,7 +1068,6 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    padding: 10px;
     gap: 10px;
     padding-left: 100px;
 }
