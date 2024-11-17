@@ -1064,3 +1064,23 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
     color: #000000;
 }
 
+.auth-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 10px;
+    gap: 10px;
+    padding-left: 100px;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.g_id_signin {
+    margin-right: 10px;
+}
+

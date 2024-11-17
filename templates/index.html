@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="shortcut icon" href="https://chat.openai.com/favicon.ico" type="image/x-icon">
     <title>RecForge</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <meta name="google-signin-client_id" content="747388287702-skk8sfj2t5n7f8nma5qokgvqgslt3igt.apps.googleusercontent.com">
 </head>
 
 <body>
@@ -101,14 +103,23 @@
                 </select>
             </div>
             <div class="label">Variables of the dataset:</div>
-            <div class="checkbox-container" id="checkbox-container">
-                <!-- Checkboxes will be dynamically added here -->
-            </div>
+            <div class="checkbox-container" id="file-checkbox-container"></div>
+            <div class="checkbox-container" id="kaggle-checkbox-container" style="display: none;"></div>
             <!-- Compile Button -->
             <button class="compile-button">Compile</button>
         </div>
         <div class="right">
-            <div class="section-title">Chat with the model</div>
+            <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Chat with the model</span>
+                <div class="auth-container">
+                    <div id="g_id_onload"
+                         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                         data-callback="handleCredentialResponse">
+                    </div>
+                    <div class="g_id_signin" data-type="standard"></div>
+                    <img src="/static/images/logo.png" alt="Logo" class="logo" id="userAvatar" style="display: none;">
+                </div>
+            </div>
             <div class="input">
                 <input type="text" placeholder="Send a Message">
                 <button>

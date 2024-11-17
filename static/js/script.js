@@ -286,3 +286,29 @@ function handleKaggleImport() {
         form.classList.remove('processing');
     });
 }
+
+// Add these functions at the top of your file
+function handleCredentialResponse(response) {
+    // Decode the JWT token
+    const responsePayload = decodeJwtResponse(response.credential);
+    
+    // Hide sign-in button and show user avatar
+    document.querySelector('.g_id_signin').style.display = 'none';
+    const userAvatar = document.getElementById('userAvatar');
+    userAvatar.src = responsePayload.picture;
+    userAvatar.style.display = 'block';
+    
+    // You can store the user info or send it to your backend
+    console.log("ID: " + responsePayload.sub);
+    console.log('Full Name: ' + responsePayload.name);
+    console.log('Email: ' + responsePayload.email);
+}
+
+function decodeJwtResponse(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+}
