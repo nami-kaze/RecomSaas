@@ -72,15 +72,18 @@ def compile_model():
         else:
             return jsonify({'success': False, 'error': 'Invalid system type'})
             
-        # Store the prepared recommender
+        # Store the prepared recommender and selected columns
         recommendation_systems[session_id]['recommender'] = recommender
+        recommendation_systems[session_id]['selected_columns'] = selected_columns
         
         return jsonify({
             'success': True,
-            'message': 'Model compiled successfully'
+            'message': 'Model compiled successfully',
+            'selected_columns': selected_columns  # Return selected columns for input form generation
         })
         
     except Exception as e:
+        print(f"Error in compile_model: {str(e)}")  # Add debugging
         return jsonify({
             'success': False,
             'error': str(e)
