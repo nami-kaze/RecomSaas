@@ -6,10 +6,8 @@ import pandas as pd
 from recommender import RecommenderSystem
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Keep your existing CORS configuration
-
-# Add a dictionary to store recommendation systems for different sessions
 recommendation_systems = {}
 
 @app.route('/')
@@ -23,13 +21,9 @@ def upload_data():
         if not file:
             return jsonify({'success': False, 'error': 'No file uploaded'})
             
-        # Read CSV file
         df = pd.read_csv(file)
-        
-        # Generate a unique session ID (you might want to use a proper session management system)
         session_id = str(hash(str(df.head()) + str(pd.Timestamp.now())))
         
-        # Store the dataframe temporarily
         recommendation_systems[session_id] = {
             'data': df,
             'columns': df.columns.tolist()
@@ -52,38 +46,21 @@ def upload_data():
 def compile_model():
     try:
         data = request.get_json()
-        session_id = data.get('session_id')
         system_type = data.get('system_type')
         selected_columns = data.get('columns')
         
-        if session_id not in recommendation_systems:
-            return jsonify({'success': False, 'error': 'Invalid session ID'})
-            
-        # Get the stored dataframe
-        df = recommendation_systems[session_id]['data']
-        
-        # Create and prepare the recommendation system
-        recommender = RecommenderSystem(df, system_type, selected_columns)
-        
-        if system_type == 'content':
-            recommender.prepare_content_based()
-        elif system_type == 'collaborative':
-            recommender.prepare_collaborative()
-        else:
-            return jsonify({'success': False, 'error': 'Invalid system type'})
-            
-        # Store the prepared recommender and selected columns
-        recommendation_systems[session_id]['recommender'] = recommender
-        recommendation_systems[session_id]['selected_columns'] = selected_columns
-        
-        return jsonify({
+        response_data = {
             'success': True,
-            'message': 'Model compiled successfully',
-            'selected_columns': selected_columns  # Return selected columns for input form generation
-        })
+            'message': 'Model compilation request received',
+            'details': {
+                'system_type': system_type,
+                'columns': selected_columns
+            }
+        }
+        
+        return jsonify(response_data)
         
     except Exception as e:
-        print(f"Error in compile_model: {str(e)}")  # Add debugging
         return jsonify({
             'success': False,
             'error': str(e)
@@ -124,6 +101,5 @@ def get_recommendations():
             'error': str(e)
         }), 500
 
-# Keep your existing main block
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

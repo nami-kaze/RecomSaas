@@ -330,9 +330,24 @@ function initializeTabs() {
 
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Initializing application...'); // Debug log
+    
     initializeTheme();
     initializeFileUpload();
     initializeTabs();
+    
+    // Add compile button event listener
+    const compileButton = document.getElementById('file-compile-btn');
+    if (compileButton) {
+        console.log('Found compile button, adding event listener...'); // Debug log
+        compileButton.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent any default behavior
+            console.log('Compile button clicked!'); // Debug log
+            handleCompileModel();
+        });
+    } else {
+        console.error('Compile button not found!');
+    }
 });
 
 function handleKaggleImport() {
@@ -440,3 +455,114 @@ function decodeJwtResponse(token) {
     }).join(''));
     return JSON.parse(jsonPayload);
 }
+
+// Add this function to handle model compilation
+function handleCompileModel() {
+    // Add immediate feedback
+    const compileButton = document.getElementById('file-compile-btn');
+    const originalText = compileButton.textContent;
+    compileButton.textContent = 'Compiling...';
+    compileButton.disabled = true;
+
+    console.log('handleCompileModel function called'); // Debug Step 1
+
+    // Get selected model type
+    const modelSelect = document.getElementById('file-model-select');
+    console.log('Model select element:', modelSelect); // Debug Step 2
+    
+    if (!modelSelect) {
+        console.error('Model select element not found!');
+        return;
+    }
+
+    const selectedModel = modelSelect.value.toLowerCase().split(' ')[0];
+    console.log('Selected model:', selectedModel); // Debug Step 3
+
+    // Get selected input columns
+    const inputCheckboxes = document.querySelectorAll('#input-checkbox-container input[type="checkbox"]:checked');
+    console.log('Found input checkboxes:', inputCheckboxes.length); // Debug Step 4
+    
+    const selectedInputs = Array.from(inputCheckboxes).map(checkbox => checkbox.value);
+    console.log('Selected inputs:', selectedInputs); // Debug Step 5
+
+    // Get selected output column
+    const selectedOutputElement = document.querySelector('#output-checkbox-container input[type="radio"]:checked');
+    console.log('Selected output element:', selectedOutputElement); // Debug Step 6
+    
+    const selectedOutput = selectedOutputElement?.value;
+    console.log('Selected output value:', selectedOutput); // Debug Step 7
+
+    // Validation with detailed logging
+    if (!selectedModel) {
+        console.error('Model validation failed: No model selected');
+        alert('Please select a model type');
+        return;
+    }
+    if (selectedInputs.length === 0) {
+        console.error('Input validation failed: No inputs selected');
+        alert('Please select at least one input variable');
+        return;
+    }
+    if (!selectedOutput) {
+        console.error('Output validation failed: No output selected');
+        alert('Please select an output variable');
+        return;
+    }
+
+    // Prepare data for backend
+    const data = {
+        system_type: selectedModel,
+        columns: [...selectedInputs, selectedOutput]
+    };
+    console.log('Prepared data for backend:', data); // Debug Step 8
+
+    // Send request to backend
+    console.log('Attempting to send request to backend...'); // Debug Step 9
+    fetch('http://127.0.0.1:5000/compile-model', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        console.log('Received response:', response); // Debug Step 10
+        return response.json();
+    })
+    .then(data => {
+        console.log('Parsed response data:', data); // Debug Step 11
+        if (data.success) {
+            console.log('Model compiled successfully:', data);
+            alert('Model compiled successfully!');
+        } else {
+            console.error('Compilation failed:', data.error);
+            alert(`Compilation failed: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error); // Debug Step 12
+        alert('Error during compilation. Check console for details.');
+    })
+    .finally(() => {
+        compileButton.textContent = originalText;
+        compileButton.disabled = false;
+    });
+}
+
+// Add event listener with debugging
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded'); // Debug Step 13
+    
+    const compileButton = document.getElementById('file-compile-btn');
+    console.log('Compile button element:', compileButton); // Debug Step 14
+    
+    if (compileButton) {
+        console.log('Adding click event listener to compile button'); // Debug Step 15
+        compileButton.addEventListener('click', () => {
+            console.log('Compile button clicked'); // Debug Step 16
+            handleCompileModel();
+        });
+    } else {
+        console.error('Compile button not found in DOM');
+    }
+});
