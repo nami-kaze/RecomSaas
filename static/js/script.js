@@ -534,6 +534,9 @@ function handleCompileModel() {
         if (data.success) {
             console.log('Model compiled successfully:', data);
             alert('Model compiled successfully!');
+            
+            // Update the advanced search form with selected input variables
+            updateAdvancedSearchForm(selectedInputs);
         } else {
             console.error('Compilation failed:', data.error);
             alert(`Compilation failed: ${data.error}`);
@@ -547,6 +550,30 @@ function handleCompileModel() {
         compileButton.textContent = originalText;
         compileButton.disabled = false;
     });
+}
+
+function updateAdvancedSearchForm(selectedInputs) {
+    const variableInputs = document.querySelector('#advanced-search .variable-inputs');
+    
+    // Clear existing inputs
+    variableInputs.innerHTML = '';
+    
+    // Create input fields for each selected input variable
+    selectedInputs.forEach(variable => {
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'input-group';
+        inputGroup.innerHTML = `
+            <label>${variable}</label>
+            <input type="text" placeholder="Enter value for ${variable}">
+        `;
+        variableInputs.appendChild(inputGroup);
+    });
+    
+    // Add the Get Advanced Recommendations button
+    const button = document.createElement('button');
+    button.className = 'get-recommendations-btn';
+    button.textContent = 'Get Advanced Recommendations';
+    variableInputs.appendChild(button);
 }
 
 // Add event listener with debugging
@@ -565,4 +592,35 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         console.error('Compile button not found in DOM');
     }
+});
+
+// Add this to your script.js file
+document.addEventListener('DOMContentLoaded', function() {
+    // Recommendation tabs
+    const recommendationTabs = document.querySelectorAll('.recommendation-form .tab-btn');
+    recommendationTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs
+            recommendationTabs.forEach(t => t.classList.remove('active'));
+            // Add active class to clicked tab
+            tab.classList.add('active');
+            
+            // Show corresponding content
+            const tabType = tab.getAttribute('data-tab');
+            document.getElementById('direct-search').style.display = 
+                tabType === 'direct' ? 'block' : 'none';
+            document.getElementById('advanced-search').style.display = 
+                tabType === 'advanced' ? 'block' : 'none';
+        });
+    });
+
+    // Visualization tabs
+    const vizTabs = document.querySelectorAll('.viz-tab');
+    vizTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            vizTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            // Add logic to switch between different visualizations
+        });
+    });
 });

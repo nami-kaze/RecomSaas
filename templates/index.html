@@ -142,7 +142,7 @@
         </div>
         <div class="right">
             <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Chat with the model</span>
+                <span>Data Insights & Recommendations</span>
                 <div class="auth-container">
                     <div id="g_id_onload"
                          data-client_id="747388287702-skk8sfj2t5n7f8nma5qokgvqgslt3igt.apps.googleusercontent.com"
@@ -152,14 +152,66 @@
                     <img src="/static/images/logo.png" alt="Logo" class="logo" id="userAvatar" style="display: none;">
                 </div>
             </div>
-            <div class="input">
-                <input type="text" placeholder="Send a Message">
-                <button>
-                    <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                </button>
+
+            <!-- Data Visualization Section -->
+            <div class="visualization-section">
+                <div class="visualization-header">
+                    <h3 class="visualization-title">Data Insights</h3>
+                    <div class="visualization-tabs">
+                        <button class="viz-tab active" data-viz="distribution">Distribution</button>
+                        <button class="viz-tab" data-viz="correlation">Correlation</button>
+                        <button class="viz-tab" data-viz="features">Features</button>
+                    </div>
+                </div>
+                <div class="graphs-grid">
+                    <div class="graph-container" id="graph1">
+                        <!-- Graphs will be rendered here -->
+                        <div class="graph-loading">
+                            <div class="graph-loading-spinner"></div>
+                        </div>
+                    </div>
+                    <div class="graph-container" id="graph2">
+                        <!-- Graphs will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendation Interface -->
+            <div class="recommendation-form">
+                <div class="upload-tabs">
+                    <button class="tab-btn active" data-tab="direct">Direct Search</button>
+                    <button class="tab-btn" data-tab="advanced">Advanced Search</button>
+                </div>
+
+                <!-- Direct Search Section -->
+                <div id="direct-search" class="recommendation-content">
+                    <div class="input-group">
+                        <label>Enter item name to get recommendations</label>
+                        <input type="text" placeholder="e.g., Movie/Song/Product name" class="direct-search-input">
+                        <button class="get-recommendations-btn">Get Recommendations</button>
+                    </div>
+                </div>
+
+                <!-- Advanced Search Section -->
+                <div id="advanced-search" class="recommendation-content" style="display: none;">
+                    <div class="variable-inputs">
+                        <!-- Dynamic inputs will be generated based on selected variables -->
+                        <div class="input-group">
+                            <label>Variable 1</label>
+                            <input type="text" placeholder="Enter value">
+                        </div>
+                        <div class="input-group">
+                            <label>Variable 2</label>
+                            <input type="text" placeholder="Enter value">
+                        </div>
+                        <button class="get-recommendations-btn">Get Advanced Recommendations</button>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="recommendations-result">
+                    <!-- Recommendations will be displayed here -->
+                </div>
             </div>
         </div>
     </div>

@@ -744,14 +744,17 @@ input:focus, select:focus, textarea:focus {
   border-color: rgba(14, 165, 233, 0.6);
   box-shadow: 0 0 15px rgba(14, 165, 233, 0.15),
               inset 0 0 8px rgba(14, 165, 233, 0.15);
+  color:#000000;
 }
 
 [data-theme="light"] .tab-btn.active {
   background-color: #e0e0e0;
+  color:#000000
 }
 
 [data-theme="light"] .tab-btn:hover {
   background-color: #b0b0b0;  
+  color:#000000;
 }
 
 /* Remove any conflicting button styles */
@@ -1363,4 +1366,182 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
 
 .checkbox-wrapper label {
   cursor: pointer;
+}
+
+/* Data Visualization Section */
+.visualization-section {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background-color: #202123;
+  border-radius: 8px;
+  border: 1px solid rgba(14, 165, 233, 0.4);
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.visualization-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.visualization-title {
+  font-size: 1.1rem;
+  color: #E5E5E5;
+  font-weight: 500;
+}
+
+.visualization-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(14, 165, 233, 0.4);
+  padding-bottom: 0.5rem;
+}
+
+.viz-tab {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: 1px solid rgba(14, 165, 233, 0.4);
+  border-radius: 4px;
+  color: #E5E5E5;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.viz-tab:hover {
+  background-color: rgba(14, 165, 233, 0.15);
+}
+
+.viz-tab.active {
+  background-color: rgba(14, 165, 233, 0.25);
+  border-color: rgba(14, 165, 233, 0.7);
+}
+
+.graph-container {
+  width: 100%;
+  height: 250px;
+  background-color: #1C1C1C;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.graph-info {
+  font-size: 0.9rem;
+  color: #b0b0b0;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Responsive layout for multiple graphs */
+.graphs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Loading state for graphs */
+.graph-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 250px;
+  background-color: rgba(14, 165, 233, 0.05);
+  border-radius: 6px;
+}
+
+.graph-loading-spinner {
+  border: 3px solid rgba(14, 165, 233, 0.1);
+  border-top: 3px solid rgba(14, 165, 233, 0.7);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Light mode overrides */
+[data-theme="light"] .visualization-section {
+  background-color: #ffffff;
+  border-color: #dddddd;
+}
+
+[data-theme="light"] .visualization-title {
+  color: #000000;
+}
+
+[data-theme="light"] .viz-tab {
+  color: #000000;
+  border-color: #dddddd;
+}
+
+[data-theme="light"] .viz-tab:hover {
+  background-color: rgba(14, 165, 233, 0.1);
+}
+
+[data-theme="light"] .viz-tab.active {
+  background-color: rgba(14, 165, 233, 0.15);
+  border-color: rgba(14, 165, 233, 0.5);
+}
+
+[data-theme="light"] .graph-container {
+  background-color: #f5f5f5;
+}
+
+[data-theme="light"] .graph-info {
+  color: #4a4a4a;
+}
+
+/* Tooltip styles for graphs */
+.graph-tooltip {
+  background-color: #202123;
+  border: 1px solid rgba(14, 165, 233, 0.4);
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  color: #E5E5E5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .graph-tooltip {
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #dddddd;
+}
+
+/* Graph legend styles */
+.graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(14, 165, 233, 0.05);
+  border-radius: 4px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #b0b0b0;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+[data-theme="light"] .legend-item {
+  color: #4a4a4a;
 }
