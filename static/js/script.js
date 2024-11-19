@@ -203,21 +203,71 @@ function getCSVHeaders(csvData) {
 }
 
 function populateCheckboxes(headers) {
-    checkboxContainer.innerHTML = '';
+    // Clear both input and output containers
+    const inputCheckboxContainer = document.getElementById('input-checkbox-container');
+    const outputCheckboxContainer = document.getElementById('output-checkbox-container');
+    inputCheckboxContainer.innerHTML = '';
+    outputCheckboxContainer.innerHTML = '';
+
     headers.forEach(header => {
         if (header) {
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = header;
-            checkbox.id = `checkbox-${header}`;
+            // Create checkbox for input variables
+            const inputCheckbox = document.createElement('input');
+            inputCheckbox.type = 'checkbox';
+            inputCheckbox.value = header;
+            inputCheckbox.id = `input-checkbox-${header}`;
 
-            const label = document.createElement('label');
-            label.htmlFor = `checkbox-${header}`;
-            label.textContent = header;
+            const inputLabel = document.createElement('label');
+            inputLabel.htmlFor = `input-checkbox-${header}`;
+            inputLabel.textContent = header;
 
-            checkboxContainer.appendChild(checkbox);
-            checkboxContainer.appendChild(label);
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = 'checkbox-wrapper';
+            inputWrapper.appendChild(inputCheckbox);
+            inputWrapper.appendChild(inputLabel);
+            inputCheckboxContainer.appendChild(inputWrapper);
+
+            // Create radio button for output variables
+            const outputRadio = document.createElement('input');
+            outputRadio.type = 'radio';
+            outputRadio.name = 'output-variable'; // Same name makes them mutually exclusive
+            outputRadio.value = header;
+            outputRadio.id = `output-radio-${header}`;
+
+            const outputLabel = document.createElement('label');
+            outputLabel.htmlFor = `output-radio-${header}`;
+            outputLabel.textContent = header;
+
+            const outputWrapper = document.createElement('div');
+            outputWrapper.className = 'radio-wrapper';
+            outputWrapper.appendChild(outputRadio);
+            outputWrapper.appendChild(outputLabel);
+            outputCheckboxContainer.appendChild(outputWrapper);
         }
+    });
+
+    // Add event listener to prevent selecting same variable as both input and output
+    const allInputCheckboxes = inputCheckboxContainer.querySelectorAll('input[type="checkbox"]');
+    const allOutputRadios = outputCheckboxContainer.querySelectorAll('input[type="radio"]');
+
+    allInputCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const correspondingRadio = document.querySelector(`#output-radio-${this.value}`);
+            if (this.checked && correspondingRadio.checked) {
+                correspondingRadio.checked = false;
+            }
+        });
+    });
+
+    allOutputRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                const correspondingCheckbox = document.querySelector(`#input-checkbox-${this.value}`);
+                if (correspondingCheckbox.checked) {
+                    correspondingCheckbox.checked = false;
+                }
+            }
+        });
     });
 }
 

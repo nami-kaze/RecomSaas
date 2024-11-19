@@ -1333,3 +1333,34 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
     border: 1px solid #b0b0b0;
 }
 
+.radio-wrapper {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 15px;
+  margin-bottom: 8px;
+}
+
+.radio-wrapper input[type="radio"] {
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.radio-wrapper label {
+  cursor: pointer;
+}
+
+.checkbox-wrapper {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 15px;
+  margin-bottom: 8px;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.checkbox-wrapper label {
+  cursor: pointer;
+}
