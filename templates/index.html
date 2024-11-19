@@ -98,6 +98,10 @@
                     </div>
                     
                     <button class="compile-button" id="file-compile-btn">Compile File Model</button>
+                    <div class="model-status">
+                        <span class="status-indicator"></span>
+                        <span class="status-text">Model not compiled</span>
+                    </div>
                 </div>
             </div>
 
@@ -137,6 +141,10 @@
                     </div>
 
                     <button class="compile-button" id="kaggle-compile">Compile Kaggle Model</button>
+                    <div class="model-status">
+                        <span class="status-indicator"></span>
+                        <span class="status-text">Model not compiled</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -216,7 +224,7 @@
 
             <!-- Add this after your existing recommendation form -->
             <div class="recommendations-container" style="display: none;">
-                <h3>Top Recommendations</h3>
+                <h3 class="section-title">Top Recommendations</h3>
                 <div class="recommendations-list">
                     <!-- Recommendations will be populated here -->
                 </div>

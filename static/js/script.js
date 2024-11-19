@@ -184,8 +184,9 @@ function handleFileUpload(event) {
                 console.log('File uploaded successfully, session ID:', data.session_id);
                 updateDropZoneUI(file.name);
                 
-                // Store session ID
+                // Store session ID in both window and localStorage
                 window.currentSessionId = data.session_id;
+                localStorage.setItem('currentSessionId', data.session_id);
                 
                 // Immediately request visualizations
                 console.log('Requesting visualizations for session:', data.session_id); // Debug
@@ -504,60 +505,55 @@ function handleCompileModel() {
     compileButton.textContent = 'Compiling...';
     compileButton.disabled = true;
 
-    console.log('handleCompileModel function called'); // Debug Step 1
+    console.log('handleCompileModel function called');
+
+    // Get the session ID from window or localStorage
+    const sessionId = window.currentSessionId || localStorage.getItem('currentSessionId');
+    console.log('Current session ID:', sessionId);
+
+    if (!sessionId) {
+        console.error('No session ID found');
+        alert('Please upload a dataset first');
+        compileButton.textContent = originalText;
+        compileButton.disabled = false;
+        return;
+    }
 
     // Get selected model type
     const modelSelect = document.getElementById('file-model-select');
-    console.log('Model select element:', modelSelect); // Debug Step 2
-    
     if (!modelSelect) {
         console.error('Model select element not found!');
         return;
     }
 
     const selectedModel = modelSelect.value.toLowerCase().split(' ')[0];
-    console.log('Selected model:', selectedModel); // Debug Step 3
+    console.log('Selected model:', selectedModel);
 
     // Get selected input columns
     const inputCheckboxes = document.querySelectorAll('#input-checkbox-container input[type="checkbox"]:checked');
-    console.log('Found input checkboxes:', inputCheckboxes.length); // Debug Step 4
-    
     const selectedInputs = Array.from(inputCheckboxes).map(checkbox => checkbox.value);
-    console.log('Selected inputs:', selectedInputs); // Debug Step 5
-
+    
     // Get selected output column
     const selectedOutputElement = document.querySelector('#output-checkbox-container input[type="radio"]:checked');
-    console.log('Selected output element:', selectedOutputElement); // Debug Step 6
-    
     const selectedOutput = selectedOutputElement?.value;
-    console.log('Selected output value:', selectedOutput); // Debug Step 7
 
-    // Validation with detailed logging
-    if (!selectedModel) {
-        console.error('Model validation failed: No model selected');
-        alert('Please select a model type');
-        return;
-    }
-    if (selectedInputs.length === 0) {
-        console.error('Input validation failed: No inputs selected');
-        alert('Please select at least one input variable');
-        return;
-    }
-    if (!selectedOutput) {
-        console.error('Output validation failed: No output selected');
-        alert('Please select an output variable');
+    // Validation
+    if (!selectedModel || selectedInputs.length === 0 || !selectedOutput) {
+        alert('Please select model type, input variables, and output variable');
+        compileButton.textContent = originalText;
+        compileButton.disabled = false;
         return;
     }
 
     // Prepare data for backend
     const data = {
+        session_id: sessionId,  // Include the session ID
         system_type: selectedModel,
         columns: [...selectedInputs, selectedOutput]
     };
-    console.log('Prepared data for backend:', data); // Debug Step 8
+    
+    console.log('Sending compilation request with data:', data);
 
-    // Send request to backend
-    console.log('Attempting to send request to backend...'); // Debug Step 9
     fetch('http://127.0.0.1:5000/compile-model', {
         method: 'POST',
         headers: {
@@ -566,13 +562,18 @@ function handleCompileModel() {
         body: JSON.stringify(data)
     })
     .then(response => {
-        console.log('Received response:', response); // Debug Step 10
+        console.log('Received response:', response);
         return response.json();
     })
     .then(data => {
-        console.log('Parsed response data:', data); // Debug Step 11
+        console.log('Parsed response data:', data);
         if (data.success) {
             console.log('Model compiled successfully:', data);
+            
+            // Store session ID in both window and localStorage
+            window.currentSessionId = data.session_id;
+            localStorage.setItem('currentSessionId', data.session_id);
+            
             alert('Model compiled successfully!');
             
             // Update the advanced search form with selected input variables
@@ -583,7 +584,7 @@ function handleCompileModel() {
         }
     })
     .catch(error => {
-        console.error('Fetch error:', error); // Debug Step 12
+        console.error('Fetch error:', error);
         alert('Error during compilation. Check console for details.');
     })
     .finally(() => {
@@ -748,11 +749,18 @@ function displayVisualizations(sessionId) {
     });
 }
 
-function getRecommendations(inputs) {
+function getRecommendations(inputValue) {
+    console.log('Starting getRecommendations function');
+    
+    const sessionId = localStorage.getItem('currentSessionId');
+    if (!sessionId) {
+        alert('Please upload a dataset and compile the model first');
+        return;
+    }
+
     const recommendationsContainer = document.querySelector('.recommendations-container');
     const recommendationsList = document.querySelector('.recommendations-list');
     
-    // Show loading state
     recommendationsContainer.style.display = 'block';
     recommendationsList.innerHTML = `
         <div class="loading-spinner">
@@ -761,8 +769,14 @@ function getRecommendations(inputs) {
         </div>
     `;
 
-    // Get the current session ID (you'll need to store this when compiling the model)
-    const sessionId = localStorage.getItem('currentSessionId');
+    // Get all input values from the form
+    const inputs = {};
+    const inputFields = document.querySelectorAll('.direct-search-input');
+    inputFields.forEach(field => {
+        inputs[field.getAttribute('data-column')] = field.value;
+    });
+
+    console.log('Sending inputs:', inputs);
 
     fetch('http://127.0.0.1:5000/get-recommendations', {
         method: 'POST',
@@ -775,8 +789,12 @@ function getRecommendations(inputs) {
             n_recommendations: 5
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Received response:', response);
+        return response.json();
+    })
     .then(data => {
+        console.log('Received data:', data);
         if (data.success) {
             displayRecommendations(data.recommendations);
         } else {
@@ -788,6 +806,7 @@ function getRecommendations(inputs) {
         }
     })
     .catch(error => {
+        console.error('Fetch error:', error);
         recommendationsList.innerHTML = `
             <div class="error-message">
                 Error: ${error.message}
@@ -810,15 +829,139 @@ function displayRecommendations(recommendations) {
 
     const recommendationsHTML = recommendations.map((rec, index) => `
         <div class="recommendation-item">
-            <div class="recommendation-info">
-                <div class="recommendation-name">${rec.name}</div>
-                <div class="recommendation-details">${rec.details || ''}</div>
-            </div>
-            <div class="recommendation-score">
-                Score: ${rec.score.toFixed(2)}
+            <div class="recommendation-rank">${index + 1}</div>
+            <div class="recommendation-content">
+                <div class="recommendation-name">${rec.output_value}</div>
             </div>
         </div>
     `).join('');
 
     recommendationsList.innerHTML = recommendationsHTML;
 }
+
+// Add this event listener for the recommendations button
+document.addEventListener('DOMContentLoaded', function() {
+    const getRecommendationsBtn = document.querySelector('.get-recommendations-btn');
+    if (getRecommendationsBtn) {
+        getRecommendationsBtn.addEventListener('click', function() {
+            console.log('Get Recommendations button clicked');
+            
+            // Get input value
+            const inputValue = document.querySelector('.direct-search-input').value;
+            console.log('Input value:', inputValue);
+            
+            // Get session ID
+            const sessionId = localStorage.getItem('currentSessionId');
+            console.log('Session ID:', sessionId);
+            
+            if (!sessionId) {
+                console.error('No session ID found');
+                alert('Please upload a dataset and compile the model first');
+                return;
+            }
+            
+            if (!inputValue) {
+                console.error('No input value provided');
+                alert('Please enter a search term');
+                return;
+            }
+            
+            getRecommendations(inputValue);
+        });
+    } else {
+        console.error('Recommendations button not found');
+    }
+});
+
+function compileModel() {
+    console.log('Starting model compilation');
+    
+    const compileButton = document.querySelector('.compile-button');
+    const originalText = compileButton.textContent;
+    compileButton.textContent = 'Compiling...';
+    compileButton.disabled = true;
+
+    // Get selected model type and columns
+    const modelType = document.querySelector('#model-type').value;
+    const selectedInputs = getSelectedInputs(); // Your function to get selected inputs
+
+    const data = {
+        system_type: modelType,
+        columns: selectedInputs
+    };
+
+    console.log('Compilation data:', data);
+
+    fetch('http://127.0.0.1:5000/compile-model', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        console.log('Received response:', response);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Parsed response data:', data);
+        if (data.success) {
+            console.log('Model compiled successfully');
+            console.log('Session ID:', data.session_id);
+            
+            // Store the session ID
+            localStorage.setItem('currentSessionId', data.session_id);
+            
+            // Verify storage
+            const storedId = localStorage.getItem('currentSessionId');
+            console.log('Verified stored session ID:', storedId);
+            
+            alert('Model compiled successfully!');
+        } else {
+            console.error('Compilation failed:', data.error);
+            alert(`Compilation failed: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Error during compilation. Check console for details.');
+    })
+    .finally(() => {
+        compileButton.textContent = originalText;
+        compileButton.disabled = false;
+    });
+}
+
+// Add this function to check if model is compiled before allowing recommendations
+function checkModelCompiled() {
+    const sessionId = localStorage.getItem('currentSessionId');
+    if (!sessionId) {
+        alert('Please upload a dataset and compile the model first');
+        return false;
+    }
+    return true;
+}
+
+// Update the recommendations click handler
+document.addEventListener('DOMContentLoaded', function() {
+    const getRecommendationsBtn = document.querySelector('.get-recommendations-btn');
+    if (getRecommendationsBtn) {
+        getRecommendationsBtn.addEventListener('click', function() {
+            console.log('Get Recommendations button clicked');
+            
+            if (!checkModelCompiled()) {
+                return;
+            }
+            
+            const inputValue = document.querySelector('.direct-search-input').value;
+            console.log('Input value:', inputValue);
+            
+            if (!inputValue) {
+                alert('Please enter a search term');
+                return;
+            }
+            
+            getRecommendations(inputValue);
+        });
+    }
+});

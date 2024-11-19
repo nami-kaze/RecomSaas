@@ -18,13 +18,46 @@ class RecommenderSystem:
         print(f"- Columns: {columns}")
         self.data = data
         self.system_type = system_type
-        self.columns = columns
-        self.model = None
+        self.input_columns = columns[:-1]  # All columns except the last one
+        self.output_column = columns[-1]   # Last column is the output
+        print(f"- Input columns: {self.input_columns}")
+        print(f"- Output column: {self.output_column}")
+        
+        # Preprocess the data
+        self._preprocess_data()
         
         # Set style for plots - using a simpler style setting
         plt.style.use('default')  # Changed from seaborn to default
         sns.set_theme(style="whitegrid")  # Updated seaborn style setting
     
+    def _preprocess_data(self):
+        """Preprocess the data for better recommendations"""
+        try:
+            # Convert all text to lowercase for better matching
+            for col in self.input_columns:
+                if self.data[col].dtype == 'object':
+                    self.data[col] = self.data[col].str.lower()
+            
+            # Create TF-IDF vectorizer for text columns
+            self.tfidf = TfidfVectorizer(
+                stop_words='english',
+                ngram_range=(1, 2),  # Use both unigrams and bigrams
+                max_features=5000,    # Limit features to most important ones
+                strip_accents='unicode',
+                analyzer='word'
+            )
+            
+            # Combine all input columns for feature creation
+            self.text_features = self.data[self.input_columns].astype(str).agg(' '.join, axis=1)
+            self.tfidf_matrix = self.tfidf.fit_transform(self.text_features)
+            
+            print("Data preprocessing completed")
+            print(f"TF-IDF matrix shape: {self.tfidf_matrix.shape}")
+            
+        except Exception as e:
+            print(f"Error in preprocessing: {str(e)}")
+            raise
+
     def generate_visualizations(self):
         """Generate a set of visualizations for the dataset"""
         print("\nStarting visualization generation...")
@@ -199,45 +232,61 @@ class RecommenderSystem:
 
     def generate_recommendations(self, inputs, n_recommendations=5):
         """Generate recommendations based on input values"""
+        print("\n=== Generating recommendations ===")
         try:
-            # Convert inputs to appropriate format
-            input_data = pd.DataFrame([inputs])
+            print(f"Generating recommendations for input: {inputs}")
             
-            if self.system_type == 'collaborative':
-                # Collaborative filtering logic
-                similarities = cosine_similarity(input_data, self.data)
-                similar_indices = similarities[0].argsort()[-n_recommendations:][::-1]
+            # Preprocess input
+            input_text = ' '.join(str(v).lower() for v in inputs.values())
+            print(f"Processed input text: {input_text}")
+            
+            # Transform input using the same TF-IDF vectorizer
+            input_vector = self.tfidf.transform([input_text])
+            
+            # Calculate cosine similarities
+            similarities = cosine_similarity(input_vector, self.tfidf_matrix)[0]
+            
+            # Get indices of top N similar items, excluding exact matches
+            similar_indices = []
+            sorted_indices = similarities.argsort()[::-1]
+            
+            # Filter recommendations
+            seen_outputs = set()
+            for idx in sorted_indices:
+                output_value = str(self.data.iloc[idx][self.output_column]).lower()
+                similarity = similarities[idx]
                 
-            else:  # Content-based
-                # Content-based filtering logic
-                tfidf = TfidfVectorizer()
-                tfidf_matrix = tfidf.fit_transform(self.data['text_column'])  # Adjust column name
-                similarities = cosine_similarity(tfidf_matrix[-1:], tfidf_matrix[:-1])[0]
-                similar_indices = similarities.argsort()[-n_recommendations:][::-1]
+                # Skip if similarity is too low or we've seen this output
+                if similarity < 0.1:  # Minimum similarity threshold
+                    continue
+                if output_value in seen_outputs:
+                    continue
+                    
+                similar_indices.append(idx)
+                seen_outputs.add(output_value)
+                
+                if len(similar_indices) >= n_recommendations:
+                    break
+            
+            print(f"Found {len(similar_indices)} recommendations")
             
             # Format recommendations
             recommendations = []
             for idx in similar_indices:
+                output_value = self.data.iloc[idx][self.output_column]
+                similarity = similarities[idx]
+                
+                print(f"Recommendation: {output_value} (similarity: {similarity:.3f})")
+                
                 recommendations.append({
-                    'name': self.data.iloc[idx]['name'],  # Adjust column name
-                    'score': float(similarities[idx]),
-                    'details': self._get_item_details(idx)  # Helper method to get additional details
+                    'output_value': str(output_value),
+                    'score': float(similarity)
                 })
             
             return recommendations
             
         except Exception as e:
             print(f"Error generating recommendations: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
             raise
-
-    def _get_item_details(self, idx):
-        """Helper method to get formatted item details"""
-        try:
-            item = self.data.iloc[idx]
-            details = []
-            for col in self.columns:
-                if col != 'name':  # Adjust based on your columns
-                    details.append(f"{col}: {item[col]}")
-            return ' | '.join(details)
-        except Exception as e:
-            return "Details not available"
