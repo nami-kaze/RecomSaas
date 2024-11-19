@@ -1427,6 +1427,22 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;  /* Prevent overflow */
+}
+
+/* Special handling for correlation plot */
+.graph-container[data-viz="correlation"] {
+    height: 300px;  /* Slightly taller for correlation plot */
+}
+
+.graph-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .graph-info {
@@ -1544,4 +1560,78 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
 
 [data-theme="light"] .legend-item {
   color: #4a4a4a;
+}
+
+.visualization-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.viz-section {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.viz-section h3 {
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.viz-section img {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.features-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+.features-grid .graph-container {
+    width: 100%;
+    margin-bottom: 0;  /* Remove default margin since we're using gap */
+}
+
+.recommendations-container {
+    width: 100%;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.recommendation-item {
+    background: var(--background-primary);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recommendation-score {
+    background: rgba(14, 165, 233, 0.2);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.recommendations-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.no-recommendations {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 20px;
 }

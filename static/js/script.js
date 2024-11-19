@@ -154,20 +154,60 @@ function handleFileSelect(event) {
 }
 
 function handleFileUpload(event) {
+    console.log('File upload started'); // Debug
     const file = event.target.files[0];
+    
     if (file && (file.type === 'text/csv' || file.name.endsWith('.csv'))) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const csvData = e.target.result;
-            const headers = getCSVHeaders(csvData);
-            populateCheckboxes(headers);
+        console.log('Valid CSV file detected:', file.name); // Debug
+        
+        // Show loading state in visualization container
+        const vizContainer = document.querySelector('.visualization-container');
+        if (vizContainer) {
+            vizContainer.innerHTML = '<div class="loading">Loading visualizations...</div>';
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        fetch('http://127.0.0.1:5000/upload-data', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('Upload response status:', response.status); // Debug
+            return response.json();
+        })
+        .then(data => {
+            console.log('Upload response data:', data); // Debug
             
-            updateDropZoneUI(file.name);
-        };
-        reader.readAsText(file);
-    } else if (file) {
-        alert("Please upload a valid CSV file.");
-        fileInput.value = '';
+            if (data.success) {
+                console.log('File uploaded successfully, session ID:', data.session_id);
+                updateDropZoneUI(file.name);
+                
+                // Store session ID
+                window.currentSessionId = data.session_id;
+                
+                // Immediately request visualizations
+                console.log('Requesting visualizations for session:', data.session_id); // Debug
+                displayVisualizations(data.session_id);
+                
+                // Update column checkboxes
+                if (data.columns) {
+                    populateCheckboxes(data.columns);
+                }
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error during file upload:', error);
+            if (vizContainer) {
+                vizContainer.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        });
+    } else {
+        console.error('Invalid file type');
+        alert('Please upload a valid CSV file');
     }
 }
 
@@ -624,3 +664,161 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+function displayVisualizations(sessionId) {
+    console.log('Attempting to display visualizations for session:', sessionId);
+
+    const graphsGrid = document.querySelector('.graphs-grid');
+    if (!graphsGrid) {
+        console.error('Graphs grid container not found!');
+        return;
+    }
+
+    // Show loading state
+    graphsGrid.innerHTML = `
+        <div class="graph-container">
+            <div class="graph-loading">
+                <div class="graph-loading-spinner"></div>
+                <p>Generating visualizations...</p>
+            </div>
+        </div>
+    `;
+
+    fetch('http://127.0.0.1:5000/get-visualizations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_id: sessionId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Create tab content
+            const distributionTab = `
+                <div class="graph-container" id="distribution-content">
+              
+                    <img src="data:image/png;base64,${data.visualizations.distribution}" alt="Distribution Plot" class="graph-image">
+                </div>
+            `;
+
+            const correlationTab = `
+                <div class="graph-container" id="correlation-content">
+                    
+                    <img src="data:image/png;base64,${data.visualizations.correlation}" alt="Correlation Plot" class="graph-image">
+                </div>
+            `;
+
+            const featuresTab = `
+                <div class="graph-container" id="features-content">
+                    <img src="data:image/png;base64,${data.visualizations.missing_data}" alt="Missing Data Plot" class="graph-image">
+                    <img src="data:image/png;base64,${data.visualizations.trends}" alt="Trends Plot" class="graph-image">
+                </div>
+            `;
+
+            // Store tab contents
+            window.tabContents = {
+                'distribution': distributionTab,
+                'correlation': correlationTab,
+                'features': featuresTab
+            };
+
+            // Show initial tab (distribution)
+            graphsGrid.innerHTML = distributionTab;
+
+            // Add click handlers to tab buttons
+            document.querySelectorAll('.viz-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    document.querySelectorAll('.viz-tab').forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    // Show corresponding content
+                    graphsGrid.innerHTML = window.tabContents[this.dataset.viz];
+                });
+            });
+        }
+    })
+    .catch(error => {
+        graphsGrid.innerHTML = `
+            <div class="graph-container">
+                <div class="error-message">Error: ${error.message}</div>
+            </div>
+        `;
+    });
+}
+
+function getRecommendations(inputs) {
+    const recommendationsContainer = document.querySelector('.recommendations-container');
+    const recommendationsList = document.querySelector('.recommendations-list');
+    
+    // Show loading state
+    recommendationsContainer.style.display = 'block';
+    recommendationsList.innerHTML = `
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Generating recommendations...</p>
+        </div>
+    `;
+
+    // Get the current session ID (you'll need to store this when compiling the model)
+    const sessionId = localStorage.getItem('currentSessionId');
+
+    fetch('http://127.0.0.1:5000/get-recommendations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            session_id: sessionId,
+            inputs: inputs,
+            n_recommendations: 5
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayRecommendations(data.recommendations);
+        } else {
+            recommendationsList.innerHTML = `
+                <div class="error-message">
+                    ${data.error || 'Failed to get recommendations'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        recommendationsList.innerHTML = `
+            <div class="error-message">
+                Error: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function displayRecommendations(recommendations) {
+    const recommendationsList = document.querySelector('.recommendations-list');
+    
+    if (!recommendations || recommendations.length === 0) {
+        recommendationsList.innerHTML = `
+            <div class="no-recommendations">
+                No recommendations found
+            </div>
+        `;
+        return;
+    }
+
+    const recommendationsHTML = recommendations.map((rec, index) => `
+        <div class="recommendation-item">
+            <div class="recommendation-info">
+                <div class="recommendation-name">${rec.name}</div>
+                <div class="recommendation-details">${rec.details || ''}</div>
+            </div>
+            <div class="recommendation-score">
+                Score: ${rec.score.toFixed(2)}
+            </div>
+        </div>
+    `).join('');
+
+    recommendationsList.innerHTML = recommendationsHTML;
+}
