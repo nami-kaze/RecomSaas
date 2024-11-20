@@ -1770,3 +1770,82 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
     height: 16px;
     stroke: currentColor;
 }
+
+/* Add these new styles for the radio group */
+.radio-group {
+    margin-top: 12px;
+    margin-bottom: 16px;
+    padding: 8px;
+    border-radius: 6px;
+    background-color: #202123;
+    border: 1px solid rgba(14, 165, 233, 0.4);
+}
+
+.radio-group .label {
+    margin-bottom: 8px;
+}
+
+.radio-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(14, 165, 233, 0.4);
+    border-radius: 50%;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+}
+
+.radio-option input[type="radio"]:checked {
+    border-color: #0EA5E9;
+}
+
+.radio-option input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background-color: #0EA5E9;
+    border-radius: 50%;
+}
+
+.radio-option label {
+    cursor: pointer;
+    color: #E5E5E5;
+    font-size: 0.9rem;
+}
+
+/* Light mode overrides */
+[data-theme="light"] .radio-group {
+    background-color: #f0f0f0;
+    border-color: #dddddd;
+}
+
+[data-theme="light"] .radio-option label {
+    color: #000000;
+}
+
+[data-theme="light"] .radio-option input[type="radio"] {
+    border-color: #b0b0b0;
+}
+
+[data-theme="light"] .radio-option input[type="radio"]:checked {
+    border-color: #0EA5E9;
+}

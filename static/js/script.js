@@ -1323,3 +1323,53 @@ function populateMultipleDatasetCheckboxes(columnsData) {
         outputContainer.appendChild(wrapper);
     });
 }
+
+// Add this to your existing JavaScript
+const algorithmOptions = {
+    'Content-based Model': ['TF-IDF', 'Word Embedding', 'Topic Modelling'],
+    'Hybrid Model': ['SVD', 'Item-KNN', 'Neural CF'],
+    'Collaborative Model': ['SVD', 'Item-KNN', 'Neural CF']
+};
+
+function updateAlgorithmOptions(modelType) {
+    const algorithmSection = document.getElementById('algorithm-selection');
+    const radioOptions = algorithmSection.querySelector('.radio-options');
+    
+    if (!modelType || modelType === "") {
+        algorithmSection.style.display = 'none';
+        return;
+    }
+
+    // Clear existing options
+    radioOptions.innerHTML = '';
+    
+    // Get the appropriate options for the selected model
+    const options = algorithmOptions[modelType] || [];
+    
+    // Create radio buttons for each option
+    options.forEach((option, index) => {
+        const radioOption = document.createElement('div');
+        radioOption.className = 'radio-option';
+        radioOption.innerHTML = `
+            <input type="radio" 
+                   id="algorithm-${index}" 
+                   name="algorithm" 
+                   value="${option}"
+                   ${index === 0 ? 'checked' : ''}>
+            <label for="algorithm-${index}">${option}</label>
+        `;
+        radioOptions.appendChild(radioOption);
+    });
+
+    // Show the algorithm selection section
+    algorithmSection.style.display = 'block';
+}
+
+// Add event listeners for both file and kaggle model selects
+document.getElementById('file-model-select').addEventListener('change', (e) => {
+    updateAlgorithmOptions(e.target.value);
+});
+
+document.getElementById('kaggle-model-select').addEventListener('change', (e) => {
+    updateAlgorithmOptions(e.target.value);
+});
