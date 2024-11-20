@@ -64,33 +64,78 @@ def compile_model():
         data = request.get_json()
         session_id = data.get('session_id')
         system_type = data.get('system_type')
-        selected_columns = data.get('columns')
+        algorithm = data.get('algorithm', 'svd')
+        inputs = data.get('inputs', [])
+        output = data.get('output')
+        
+        print(f"Received compile request for session: {session_id}")
         
         if not session_id or session_id not in recommendation_systems:
             return jsonify({
                 'success': False,
-                'error': 'No dataset uploaded. Please upload a dataset first.'
+                'error': 'No dataset uploaded. Please upload datasets first.'
             })
         
-        # Get the data from our storage
         session_data = recommendation_systems[session_id]
-        if 'data' not in session_data:
-            return jsonify({
-                'success': False,
-                'error': 'Dataset not found. Please upload again.'
-            })
-        
         df = session_data['data']
         
-        # Create and store the recommender system
-        recommender = RecommenderSystem(
-            data=df,
-            system_type=system_type,
-            columns=selected_columns
-        )
-        
-        # Store the compiled model
-        recommendation_systems[session_id]['recommender'] = recommender
+        if system_type == 'collaborative':
+            try:
+                # Validate required columns
+                if len(inputs) < 2 or not output:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Collaborative filtering requires user_id, item_id, and rating columns'
+                    })
+                
+                # Create column list in correct order [user_id, item_id, rating]
+                selected_columns = [
+                    inputs[0]['column'],  # user_id
+                    inputs[1]['column'],  # item_id
+                    output['column']      # rating
+                ]
+                
+                # Validate rating column is numeric
+                try:
+                    pd.to_numeric(df[output['column']])
+                except Exception as e:
+                    return jsonify({
+                        'success': False,
+                        'error': f"Rating column '{output['column']}' must contain numeric values only"
+                    })
+                
+                print(f"Selected columns for collaborative filtering: {selected_columns}")
+                
+                # Initialize recommender system
+                recommender = RecommenderSystem(
+                    data=df,
+                    system_type='collaborative',
+                    columns=selected_columns,
+                    algorithm=algorithm
+                )
+                
+                # Store the compiled model
+                recommendation_systems[session_id]['recommender'] = recommender
+                recommendation_systems[session_id]['columns'] = selected_columns
+                recommendation_systems[session_id]['algorithm'] = algorithm
+                
+                print(f"Collaborative model ({algorithm}) compiled successfully")
+                
+            except Exception as e:
+                print(f"Error in collaborative model compilation: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Error in collaborative model compilation: {str(e)}'
+                })
+        else:
+            # Content-based compilation
+            selected_columns = [col['column'] for col in inputs] + [output['column']]
+            recommender = RecommenderSystem(
+                data=df,
+                system_type=system_type,
+                columns=selected_columns
+            )
+            recommendation_systems[session_id]['recommender'] = recommender
         
         return jsonify({
             'success': True,
@@ -338,53 +383,80 @@ class RecommenderSystem:
 def upload_multiple():
     try:
         print("\n=== Starting multiple file upload process ===")
-        print("Files in request:", list(request.files.keys()))
+        files = request.files
         
-        if not request.files:
-            print("No files found in request")
+        if not files:
             return jsonify({'success': False, 'error': 'No files uploaded'})
         
-        dataframes = {}
-        all_columns = {}
-        
-        for key in request.files:
-            file = request.files[key]
-            if file and file.filename:
-                print(f"\nProcessing file: {file.filename}")
-                try:
-                    # Read CSV file
-                    df = pd.read_csv(file)
-                    print(f"Successfully read file. Shape: {df.shape}")
-                    print(f"Columns: {df.columns.tolist()}")
-                    
-                    dataframes[file.filename] = df
-                    all_columns[file.filename] = df.columns.tolist()
-                except Exception as e:
-                    print(f"Error processing file {file.filename}: {str(e)}")
-                    return jsonify({'success': False, 'error': f'Error processing {file.filename}: {str(e)}'})
-        
-        if not dataframes:
-            print("No valid CSV files processed")
-            return jsonify({'success': False, 'error': 'No valid CSV files found'})
-        
-        # Generate session ID
+        # Generate a new session ID
         session_id = str(uuid.uuid4())
-        print(f"\nGenerated session ID: {session_id}")
+        print(f"Generated new session ID: {session_id}")
         
-        response_data = {
-            'success': True,
-            'session_id': session_id,
-            'columns': all_columns,
-            'message': 'Files uploaded successfully'
+        # Store dataframes for this session
+        dataframes = {}
+        
+        # Process each uploaded file
+        for file_key in files:
+            file = files[file_key]
+            if file.filename.endswith('.csv'):
+                print(f"Processing file: {file.filename}")
+                df = pd.read_csv(file)
+                dataframes[file.filename] = df
+                print(f"Loaded dataframe with shape: {df.shape}")
+        
+        if len(dataframes) < 2:
+            return jsonify({
+                'success': False,
+                'error': 'Please upload at least 2 CSV files'
+            })
+        
+        # Find common columns between dataframes
+        all_columns = [set(df.columns) for df in dataframes.values()]
+        common_columns = set.intersection(*all_columns)
+        
+        if not common_columns:
+            return jsonify({
+                'success': False,
+                'error': 'No common columns found between datasets'
+            })
+        
+        # Merge dataframes on first common column
+        merge_column = list(common_columns)[0]
+        print(f"Merging datasets on column: {merge_column}")
+        
+        merged_df = None
+        for df in dataframes.values():
+            if merged_df is None:
+                merged_df = df
+            else:
+                merged_df = pd.merge(merged_df, df, on=merge_column, how='inner')
+        
+        # Store everything in the session
+        recommendation_systems[session_id] = {
+            'data': merged_df,
+            'original_dataframes': dataframes,
+            'merge_column': merge_column,
+            'columns': {
+                filename: df.columns.tolist() 
+                for filename, df in dataframes.items()
+            }
         }
         
-        print("\nSending response data:")
-        print(json.dumps(response_data, indent=2))
+        print(f"Session data stored successfully. Available columns: {merged_df.columns.tolist()}")
         
-        return jsonify(response_data)
+        return jsonify({
+            'success': True,
+            'session_id': session_id,
+            'columns': {
+                filename: df.columns.tolist() 
+                for filename, df in dataframes.items()
+            },
+            'merge_column': merge_column,
+            'message': 'Files uploaded and merged successfully'
+        })
         
     except Exception as e:
-        print(f"\nError in upload_multiple: {str(e)}")
+        print(f"Error in upload_multiple: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)

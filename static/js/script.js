@@ -245,16 +245,15 @@ function getCSVHeaders(csvData) {
 }
 
 function populateCheckboxes(columns) {
-    console.log('populateCheckboxes called with:', columns);
+    console.log('Populating checkboxes with columns:', columns);
     
     const inputContainer = document.getElementById('input-checkbox-container');
     const outputContainer = document.getElementById('output-checkbox-container');
+    const modelSelect = document.getElementById('file-model-select');
+    const selectedModel = modelSelect.value.toLowerCase().split(' ')[0];
     
     if (!inputContainer || !outputContainer) {
-        console.error('Containers not found:', {
-            inputContainer: !!inputContainer,
-            outputContainer: !!outputContainer
-        });
+        console.error('Containers not found');
         return;
     }
     
@@ -263,63 +262,95 @@ function populateCheckboxes(columns) {
     outputContainer.innerHTML = '';
     
     try {
-        // Handle both single file and multiple files cases
-        if (Array.isArray(columns)) {
-            console.log('Processing single file columns');
-            columns.forEach(column => {
-                console.log('Creating checkbox for column:', column);
-                // Create input checkbox
-                const inputWrapper = document.createElement('div');
-                inputWrapper.className = 'checkbox-wrapper';
-                inputWrapper.innerHTML = `
-                    <input type="checkbox" id="input-${column}" name="input-columns" value="${column}">
-                    <label for="input-${column}">${column}</label>
-                `;
-                inputContainer.appendChild(inputWrapper);
-
-                // Create output radio
-                const outputWrapper = document.createElement('div');
-                outputWrapper.className = 'checkbox-wrapper';
-                outputWrapper.innerHTML = `
-                    <input type="radio" id="output-${column}" name="output-column" value="${column}">
-                    <label for="output-${column}">${column}</label>
-                `;
-                outputContainer.appendChild(outputWrapper);
-            });
-        } else {
-            console.log('Processing multiple files columns');
+        if (selectedModel === 'collaborative') {
+            // For collaborative filtering, create three sections:
+            // 1. User ID selection
+            // 2. Item ID selection
+            // 3. Rating selection (must be numeric)
+            
+            inputContainer.innerHTML = `
+                <div class="column-section">
+                    <h4>Select User ID Column:</h4>
+                    <div class="checkbox-group user-id"></div>
+                </div>
+                <div class="column-section">
+                    <h4>Select Item ID Column:</h4>
+                    <div class="checkbox-group item-id"></div>
+                </div>
+            `;
+            
+            outputContainer.innerHTML = `
+                <div class="column-section">
+                    <h4>Select Rating Column (must be numeric):</h4>
+                    <div class="checkbox-group rating"></div>
+                </div>
+            `;
+            
+            // Helper function to identify likely numeric columns
+            const isLikelyNumeric = (columnName) => {
+                const numericPatterns = ['rating', 'score', 'rank', 'stars', 'value'];
+                return numericPatterns.some(pattern => 
+                    columnName.toLowerCase().includes(pattern)
+                );
+            };
+            
+            // Helper function to identify likely ID columns
+            const isLikelyId = (columnName) => {
+                const idPatterns = ['id', 'code', 'key', 'number'];
+                return idPatterns.some(pattern => 
+                    columnName.toLowerCase().includes(pattern)
+                );
+            };
+            
             Object.entries(columns).forEach(([filename, fileColumns]) => {
-                console.log(`Processing file: ${filename} with columns:`, fileColumns);
                 fileColumns.forEach(column => {
-                    // Create input checkbox
-                    const inputWrapper = document.createElement('div');
-                    inputWrapper.className = 'checkbox-wrapper';
-                    inputWrapper.innerHTML = `
-                        <input type="checkbox" 
-                               id="input-${filename}-${column}" 
-                               name="input-columns" 
-                               value="${column}" 
-                               data-file="${filename}">
-                        <label for="input-${filename}-${column}">${column} (${filename})</label>
-                    `;
-                    inputContainer.appendChild(inputWrapper);
-
-                    // Create output radio
-                    const outputWrapper = document.createElement('div');
-                    outputWrapper.className = 'checkbox-wrapper';
-                    outputWrapper.innerHTML = `
+                    // Create checkbox/radio elements
+                    const userIdElement = document.createElement('div');
+                    const itemIdElement = document.createElement('div');
+                    const ratingElement = document.createElement('div');
+                    
+                    userIdElement.className = 'checkbox-wrapper';
+                    itemIdElement.className = 'checkbox-wrapper';
+                    ratingElement.className = 'checkbox-wrapper';
+                    
+                    // Add checkboxes/radios with appropriate checked state based on column name
+                    userIdElement.innerHTML = `
                         <input type="radio" 
-                               id="output-${filename}-${column}" 
-                               name="output-column" 
+                               name="user-id-column" 
                                value="${column}" 
-                               data-file="${filename}">
-                        <label for="output-${filename}-${column}">${column} (${filename})</label>
+                               data-file="${filename}"
+                               ${isLikelyId(column) && column.toLowerCase().includes('user') ? 'checked' : ''}>
+                        <label>${column} (${filename})</label>
                     `;
-                    outputContainer.appendChild(outputWrapper);
+                    
+                    itemIdElement.innerHTML = `
+                        <input type="radio" 
+                               name="item-id-column" 
+                               value="${column}" 
+                               data-file="${filename}"
+                               ${isLikelyId(column) && column.toLowerCase().includes('item') ? 'checked' : ''}>
+                        <label>${column} (${filename})</label>
+                    `;
+                    
+                    ratingElement.innerHTML = `
+                        <input type="radio" 
+                               name="rating-column" 
+                               value="${column}" 
+                               data-file="${filename}"
+                               ${isLikelyNumeric(column) ? 'checked' : ''}>
+                        <label>${column} (${filename})</label>
+                    `;
+                    
+                    // Add to appropriate container
+                    inputContainer.querySelector('.user-id').appendChild(userIdElement);
+                    inputContainer.querySelector('.item-id').appendChild(itemIdElement);
+                    outputContainer.querySelector('.rating').appendChild(ratingElement);
                 });
             });
+        } else {
+            // Existing content-based checkbox population code
+            // ... your existing code for content-based ...
         }
-        console.log('Finished populating checkboxes');
     } catch (error) {
         console.error('Error while populating checkboxes:', error);
     }
@@ -512,60 +543,74 @@ function decodeJwtResponse(token) {
 
 // Add this function to handle model compilation
 function handleCompileModel() {
-    // Add immediate feedback
-    const compileButton = document.getElementById('file-compile-btn');
-    const originalText = compileButton.textContent;
-    compileButton.textContent = 'Compiling...';
-    compileButton.disabled = true;
-
-    console.log('handleCompileModel function called');
-
-    // Get the session ID from window or localStorage
     const sessionId = window.currentSessionId || localStorage.getItem('currentSessionId');
-    console.log('Current session ID:', sessionId);
+    const modelSelect = document.getElementById('file-model-select');
+    const selectedModel = modelSelect.value.toLowerCase().split(' ')[0];
+    const selectedAlgorithm = document.querySelector('input[name="algorithm"]:checked')?.value;
 
     if (!sessionId) {
-        console.error('No session ID found');
-        alert('Please upload a dataset first');
-        compileButton.textContent = originalText;
-        compileButton.disabled = false;
+        alert('Please upload your datasets first');
         return;
     }
 
-    // Get selected model type
-    const modelSelect = document.getElementById('file-model-select');
-    if (!modelSelect) {
-        console.error('Model select element not found!');
+    let selectedInputs = [];
+    let selectedOutput = null;
+
+    if (selectedModel === 'collaborative') {
+        // Get User ID and Item ID selections
+        const userIdElement = document.querySelector('input[name="user-id-column"]:checked');
+        const itemIdElement = document.querySelector('input[name="item-id-column"]:checked');
+        const ratingElement = document.querySelector('input[name="rating-column"]:checked');
+
+        if (!userIdElement || !itemIdElement || !ratingElement) {
+            alert('Please select User ID, Item ID, and Rating columns');
+            return;
+        }
+
+        selectedInputs = [
+            {
+                column: userIdElement.value,
+                file: userIdElement.dataset.file
+            },
+            {
+                column: itemIdElement.value,
+                file: itemIdElement.dataset.file
+            }
+        ];
+
+        selectedOutput = {
+            column: ratingElement.value,
+            file: ratingElement.dataset.file
+        };
+    } else {
+        // Existing content-based selection code
+        const inputCheckboxes = document.querySelectorAll('#input-checkbox-container input[type="checkbox"]:checked');
+        selectedInputs = Array.from(inputCheckboxes).map(checkbox => ({
+            column: checkbox.value,
+            file: checkbox.dataset.file
+        }));
+
+        const selectedOutputElement = document.querySelector('#output-checkbox-container input[type="radio"]:checked');
+        selectedOutput = selectedOutputElement ? {
+            column: selectedOutputElement.value,
+            file: selectedOutputElement.dataset.file
+        } : null;
+    }
+
+    if (!selectedModel || selectedInputs.length === 0 || !selectedOutput || !selectedAlgorithm) {
+        alert('Please select model type, algorithm, input variables, and output variable');
         return;
     }
 
-    const selectedModel = modelSelect.value.toLowerCase().split(' ')[0];
-    console.log('Selected model:', selectedModel);
-
-    // Get selected input columns
-    const inputCheckboxes = document.querySelectorAll('#input-checkbox-container input[type="checkbox"]:checked');
-    const selectedInputs = Array.from(inputCheckboxes).map(checkbox => checkbox.value);
-    
-    // Get selected output column
-    const selectedOutputElement = document.querySelector('#output-checkbox-container input[type="radio"]:checked');
-    const selectedOutput = selectedOutputElement?.value;
-
-    // Validation
-    if (!selectedModel || selectedInputs.length === 0 || !selectedOutput) {
-        alert('Please select model type, input variables, and output variable');
-        compileButton.textContent = originalText;
-        compileButton.disabled = false;
-        return;
-    }
-
-    // Prepare data for backend
     const data = {
-        session_id: sessionId,  // Include the session ID
+        session_id: sessionId,
         system_type: selectedModel,
-        columns: [...selectedInputs, selectedOutput]
+        algorithm: selectedAlgorithm,
+        inputs: selectedInputs,
+        output: selectedOutput
     };
-    
-    console.log('Sending compilation request with data:', data);
+
+    console.log('Sending compilation request:', data);
 
     fetch('http://127.0.0.1:5000/compile-model', {
         method: 'POST',
@@ -574,74 +619,181 @@ function handleCompileModel() {
         },
         body: JSON.stringify(data)
     })
-    .then(response => {
-        console.log('Received response:', response);
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('Parsed response data:', data);
         if (data.success) {
-            console.log('Model compiled successfully:', data);
-            
-            // Show export button after successful compilation
-            const exportButton = document.getElementById('export-model-btn');
-            if (exportButton) {
-                exportButton.style.display = 'block';
-            }
-            
-            // Store model configuration for export
-            window.modelConfig = {
-                system_type: selectedModel,
-                input_columns: selectedInputs,
-                output_column: selectedOutput
-            };
-            
-            // Store session ID in both window and localStorage
-            window.currentSessionId = data.session_id;
-            localStorage.setItem('currentSessionId', data.session_id);
-            
             alert('Model compiled successfully!');
-            
-            // Update the advanced search form with selected input variables
-            updateAdvancedSearchForm(selectedInputs);
         } else {
-            console.error('Compilation failed:', data.error);
-            alert(`Compilation failed: ${data.error}`);
+            throw new Error(data.error || 'Compilation failed');
         }
     })
     .catch(error => {
-        console.error('Fetch error:', error);
-        alert('Error during compilation. Check console for details.');
-    })
-    .finally(() => {
-        compileButton.textContent = originalText;
-        compileButton.disabled = false;
+        console.error('Compilation error:', error);
+        alert(`Compilation failed: ${error.message}`);
     });
 }
 
 function updateAdvancedSearchForm(selectedInputs) {
-    const variableInputs = document.querySelector('#advanced-search .variable-inputs');
+    const searchContainer = document.querySelector('.advanced-search');
+    const modelSelect = document.getElementById('file-model-select');
+    const selectedModel = modelSelect.value.toLowerCase().split(' ')[0];
+
+    if (!searchContainer) return;
+
+    let formHTML = '';
     
-    // Clear existing inputs
-    variableInputs.innerHTML = '';
-    
-    // Create input fields for each selected input variable
-    selectedInputs.forEach(variable => {
-        const inputGroup = document.createElement('div');
-        inputGroup.className = 'input-group';
-        inputGroup.innerHTML = `
-            <label>${variable}</label>
-            <input type="text" placeholder="Enter value for ${variable}">
+    if (selectedModel === 'collaborative') {
+        // For collaborative, we only need user ID input
+        const userIdColumn = document.querySelector('input[name="user-id-column"]:checked')?.value || 'userId';
+        formHTML = `
+            <div class="search-form">
+                <div class="input-group">
+                    <label>Enter User ID:</label>
+                    <input type="text" id="search-${userIdColumn}" placeholder="Enter user ID">
+                </div>
+                <button class="search-btn">Get Recommendations</button>
+            </div>
+            <div class="search-results"></div>
         `;
-        variableInputs.appendChild(inputGroup);
+    } else {
+        // Existing content-based search form
+        formHTML = `
+            <div class="search-form">
+                ${selectedInputs.map(column => `
+                    <div class="input-group">
+                        <label>${column}:</label>
+                        <input type="text" id="search-${column}" placeholder="Enter ${column}">
+                    </div>
+                `).join('')}
+                <button class="search-btn">Get Recommendations</button>
+            </div>
+            <div class="search-results"></div>
+        `;
+    }
+
+    searchContainer.innerHTML = formHTML;
+
+    // Add event listener to search button
+    const searchBtn = searchContainer.querySelector('.search-btn');
+    searchBtn.addEventListener('click', function() {
+        const inputs = {};
+        
+        if (selectedModel === 'collaborative') {
+            // For collaborative, get only user ID
+            const userIdColumn = document.querySelector('input[name="user-id-column"]:checked')?.value || 'userId';
+            inputs[userIdColumn] = document.getElementById(`search-${userIdColumn}`).value;
+        } else {
+            // For content-based, get all inputs
+            selectedInputs.forEach(column => {
+                inputs[column] = document.getElementById(`search-${column}`).value;
+            });
+        }
+
+        handleAdvancedSearch(inputs);
     });
-    
-    // Add the Get Advanced Recommendations button
-    const button = document.createElement('button');
-    button.className = 'get-recommendations-btn';
-    button.textContent = 'Get Advanced Recommendations';
-    variableInputs.appendChild(button);
 }
+
+function handleAdvancedSearch(inputs) {
+    const sessionId = window.currentSessionId || localStorage.getItem('currentSessionId');
+    const searchResults = document.querySelector('.search-results');
+    
+    if (!sessionId) {
+        alert('Please upload datasets and compile model first');
+        return;
+    }
+
+    searchResults.innerHTML = '<div class="loading">Getting recommendations...</div>';
+
+    fetch('http://127.0.0.1:5000/get-recommendations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            session_id: sessionId,
+            inputs: inputs
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Display recommendations
+            const recommendations = data.recommendations;
+            let resultsHTML = '<h3>Top Recommendations</h3>';
+            
+            if (recommendations.length === 0) {
+                resultsHTML += '<p>No recommendations found.</p>';
+            } else {
+                resultsHTML += '<div class="recommendations-list">';
+                recommendations.forEach((rec, index) => {
+                    resultsHTML += `
+                        <div class="recommendation-item">
+                            <span class="rank">#${index + 1}</span>
+                            <span class="item">${rec.output_value}</span>
+                            <span class="score">Score: ${rec.score.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+                resultsHTML += '</div>';
+            }
+            
+            searchResults.innerHTML = resultsHTML;
+        } else {
+            throw new Error(data.error || 'Failed to get recommendations');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        searchResults.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+    });
+}
+
+// Add these styles to your CSS
+const style = document.createElement('style');
+style.textContent = `
+    .recommendations-list {
+        margin-top: 15px;
+    }
+
+    .recommendation-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        margin: 5px 0;
+        background: var(--secondary-bg);
+        border-radius: 5px;
+    }
+
+    .recommendation-item .rank {
+        font-weight: bold;
+        margin-right: 15px;
+        color: var(--primary-color);
+    }
+
+    .recommendation-item .item {
+        flex-grow: 1;
+    }
+
+    .recommendation-item .score {
+        color: var(--text-secondary);
+        margin-left: 15px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: var(--text-secondary);
+    }
+
+    .error {
+        color: #ff4444;
+        padding: 10px;
+        background: rgba(255, 68, 68, 0.1);
+        border-radius: 5px;
+    }
+`;
+
+document.head.appendChild(style);
 
 // Add event listener with debugging
 document.addEventListener('DOMContentLoaded', () => {
@@ -1111,84 +1263,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handle multiple file selection
 function handleMultipleFileSelect(event) {
-    console.log('handleMultipleFileSelect triggered');
     const files = event.target.files;
-    const dropZone = document.getElementById('drop-zone');
-    
-    if (!files || files.length === 0) {
-        console.log('No files selected');
+    if (!files || files.length < 2) {
+        alert('Please select at least 2 CSV files');
         return;
     }
-    
-    console.log(`Number of files selected: ${files.length}`);
-    console.log('Selected files:', Array.from(files).map(f => f.name));
-    
-    // Create FormData object
+
     const formData = new FormData();
-    
-    // Add all files to FormData
     Array.from(files).forEach((file, index) => {
         formData.append(`file${index}`, file);
-        console.log(`Added to FormData: file${index}`, file.name);
     });
 
-    // Update drop zone UI
-    dropZone.innerHTML = `
-        <div class="icon">📁</div>
-        <div class="selected-files">
-            ${Array.from(files).map(file => `
-                <p class="file-name">⌛ ${file.name}</p>
-            `).join('')}
-        </div>
-        <p class="sub-text">Uploading...</p>
-    `;
-
-    console.log('Making fetch request to /upload-multiple');
-    // Send files to server
-    fetch('/upload-multiple', {
+    fetch('http://127.0.0.1:5000/upload-multiple', {
         method: 'POST',
         body: formData
     })
-    .then(response => {
-        console.log('Received response:', response.status);
-        return response.json().then(data => {
-            console.log('Response data:', data);
-            return data;
-        });
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('Processing response data');
-        if (!data.success) {
-            throw new Error(data.error || 'Upload failed');
-        }
-        
-        // Update drop zone to show success
-        dropZone.innerHTML = `
-            <div class="icon">📁</div>
-            <div class="selected-files">
-                ${Array.from(files).map(file => `
-                    <p class="file-name">✓ ${file.name}</p>
-                `).join('')}
-            </div>
-            <p class="sub-text">Files uploaded successfully</p>
-        `;
-        
-        console.log('Columns data received:', data.columns);
-        // Populate checkboxes with columns
-        if (data.columns) {
-            populateCheckboxes(data.columns);
+        if (data.success) {
+            // Store session ID both in window and localStorage
+            window.currentSessionId = data.session_id;
+            localStorage.setItem('currentSessionId', data.session_id);
+            
+            console.log('Files uploaded successfully. Session ID:', data.session_id);
+            
+            // Update UI to show success
+            updateDropZoneUI(Array.from(files).map(f => f.name).join(', '));
+            
+            // Populate checkboxes with columns from all files
+            if (data.columns) {
+                populateCheckboxes(data.columns);
+            }
         } else {
-            console.error('No columns data in response');
+            throw new Error(data.error || 'Upload failed');
         }
     })
     .catch(error => {
-        console.error('Error in upload process:', error);
-        // Show error in drop zone
-        dropZone.innerHTML = `
-            <div class="icon">❌</div>
-            <p>Upload failed: ${error.message}</p>
-            <p class="sub-text">Click to try again</p>
-        `;
+        console.error('Upload error:', error);
+        alert(`Upload failed: ${error.message}`);
     });
 }
 

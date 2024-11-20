@@ -9,27 +9,94 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from scipy.sparse.linalg import svds
 import io
 import base64
+from surprise import Dataset, Reader, SVD, KNNBasic
 
 class RecommenderSystem:
-    def __init__(self, data, system_type, columns):
+    def __init__(self, data, system_type, columns, algorithm='svd'):
         print(f"Initializing RecommenderSystem with:")
         print(f"- Data shape: {data.shape}")
         print(f"- System type: {system_type}")
         print(f"- Columns: {columns}")
+        print(f"- Algorithm: {algorithm}")
+        
         self.data = data
         self.system_type = system_type
-        self.input_columns = columns[:-1]  # All columns except the last one
-        self.output_column = columns[-1]   # Last column is the output
-        print(f"- Input columns: {self.input_columns}")
-        print(f"- Output column: {self.output_column}")
+        self.algorithm = algorithm
         
-        # Preprocess the data
-        self._preprocess_data()
-        
-        # Set style for plots - using a simpler style setting
-        plt.style.use('default')  # Changed from seaborn to default
-        sns.set_theme(style="whitegrid")  # Updated seaborn style setting
-    
+        if system_type == 'collaborative':
+            # For collaborative filtering, expect [user_id, item_id, rating]
+            self.user_col = columns[0]
+            self.item_col = columns[1]
+            self.rating_col = columns[2]
+            self._init_collaborative_model()
+        else:
+            # Existing content-based initialization
+            self.input_columns = columns[:-1]
+            self.output_column = columns[-1]
+            self._preprocess_data()
+
+    def _init_collaborative_model(self):
+        """Initialize collaborative filtering model"""
+        try:
+            print("Initializing collaborative filtering model...")
+            
+            # Create a copy of the data to avoid modifying the original
+            self.processed_data = self.data.copy()
+            
+            # Ensure user_id and item_id are strings (to handle both numerical and string IDs)
+            self.processed_data[self.user_col] = self.processed_data[self.user_col].astype(str)
+            self.processed_data[self.item_col] = self.processed_data[self.item_col].astype(str)
+            
+            # Ensure rating column is numeric
+            try:
+                self.processed_data[self.rating_col] = pd.to_numeric(self.processed_data[self.rating_col])
+            except Exception as e:
+                raise ValueError(f"Rating column '{self.rating_col}' must contain numeric values only")
+            
+            # Create ID mappings for users and items
+            self.user_to_idx = {user: idx for idx, user in enumerate(self.processed_data[self.user_col].unique())}
+            self.idx_to_user = {idx: user for user, idx in self.user_to_idx.items()}
+            
+            self.item_to_idx = {item: idx for idx, item in enumerate(self.processed_data[self.item_col].unique())}
+            self.idx_to_item = {idx: item for item, idx in self.item_to_idx.items()}
+            
+            # Map IDs to indices
+            self.processed_data['user_idx'] = self.processed_data[self.user_col].map(self.user_to_idx)
+            self.processed_data['item_idx'] = self.processed_data[self.item_col].map(self.item_to_idx)
+            
+            print("Data preprocessing completed")
+            print(f"Number of users: {len(self.user_to_idx)}")
+            print(f"Number of items: {len(self.item_to_idx)}")
+            
+            # Create Surprise reader object
+            reader = Reader(rating_scale=(
+                self.processed_data[self.rating_col].min(),
+                self.processed_data[self.rating_col].max()
+            ))
+            
+            # Load data into Surprise format using mapped indices
+            data = Dataset.load_from_df(
+                self.processed_data[['user_idx', 'item_idx', self.rating_col]],
+                reader
+            )
+            
+            # Build training set
+            trainset = data.build_full_trainset()
+            
+            # Initialize and train model based on algorithm choice
+            if self.algorithm.lower() == 'svd':
+                self.model = SVD(n_factors=100, n_epochs=20, lr_all=0.005, reg_all=0.02)
+            else:  # item-knn
+                self.model = KNNBasic(sim_options={'name': 'cosine', 'user_based': False})
+            
+            print(f"Training {self.algorithm} model...")
+            self.model.fit(trainset)
+            print("Model training completed")
+            
+        except Exception as e:
+            print(f"Error in _init_collaborative_model: {str(e)}")
+            raise
+
     def _preprocess_data(self):
         """Preprocess the data for better recommendations"""
         try:
@@ -232,61 +299,80 @@ class RecommenderSystem:
 
     def generate_recommendations(self, inputs, n_recommendations=5):
         """Generate recommendations based on input values"""
-        print("\n=== Generating recommendations ===")
         try:
-            print(f"Generating recommendations for input: {inputs}")
-            
-            # Preprocess input
-            input_text = ' '.join(str(v).lower() for v in inputs.values())
-            print(f"Processed input text: {input_text}")
-            
-            # Transform input using the same TF-IDF vectorizer
-            input_vector = self.tfidf.transform([input_text])
-            
-            # Calculate cosine similarities
-            similarities = cosine_similarity(input_vector, self.tfidf_matrix)[0]
-            
-            # Get indices of top N similar items, excluding exact matches
-            similar_indices = []
-            sorted_indices = similarities.argsort()[::-1]
-            
-            # Filter recommendations
-            seen_outputs = set()
-            for idx in sorted_indices:
-                output_value = str(self.data.iloc[idx][self.output_column]).lower()
-                similarity = similarities[idx]
+            if self.system_type == 'collaborative':
+                return self._generate_collaborative_recommendations(inputs, n_recommendations)
+            else:
+                return self._generate_content_recommendations(inputs, n_recommendations)
                 
-                # Skip if similarity is too low or we've seen this output
-                if similarity < 0.1:  # Minimum similarity threshold
-                    continue
-                if output_value in seen_outputs:
-                    continue
-                    
-                similar_indices.append(idx)
-                seen_outputs.add(output_value)
-                
-                if len(similar_indices) >= n_recommendations:
-                    break
+        except Exception as e:
+            print(f"Error in generate_recommendations: {str(e)}")
+            raise
+
+    def _generate_collaborative_recommendations(self, inputs, n_recommendations=5):
+        """Generate collaborative filtering recommendations"""
+        try:
+            print(f"\nGenerating collaborative recommendations for: {inputs}")
             
-            print(f"Found {len(similar_indices)} recommendations")
+            # Get the user ID from inputs using the correct column name
+            user_id = str(inputs.get(self.user_col))
+            
+            if not user_id:
+                raise ValueError(f"Please provide a valid {self.user_col}")
+            
+            if user_id not in self.user_to_idx:
+                raise ValueError(f"User ID '{user_id}' not found in training data")
+            
+            user_idx = self.user_to_idx[user_id]
+            
+            # Get all items the user hasn't interacted with
+            user_items = set(self.processed_data[
+                self.processed_data['user_idx'] == user_idx
+            ]['item_idx'])
+            
+            items_to_predict = [
+                idx for idx in range(len(self.item_to_idx)) 
+                if idx not in user_items
+            ]
+            
+            # Generate predictions
+            predictions = []
+            for item_idx in items_to_predict:
+                pred = self.model.predict(user_idx, item_idx)
+                
+                # Get the original item ID/name
+                item_id = self.idx_to_item[item_idx]
+                
+                # If you have item details (e.g., movie titles), get them
+                item_details = self.data[self.data[self.item_col] == item_id].iloc[0]
+                item_name = item_details.get('title', item_id)  # Use title if available, else use ID
+                
+                predictions.append({
+                    'item_id': item_id,
+                    'item_name': item_name,
+                    'predicted_rating': pred.est
+                })
+            
+            # Sort predictions and get top N
+            predictions.sort(key=lambda x: x['predicted_rating'], reverse=True)
+            top_predictions = predictions[:n_recommendations]
             
             # Format recommendations
             recommendations = []
-            for idx in similar_indices:
-                output_value = self.data.iloc[idx][self.output_column]
-                similarity = similarities[idx]
-                
-                print(f"Recommendation: {output_value} (similarity: {similarity:.3f})")
-                
+            for pred in top_predictions:
                 recommendations.append({
-                    'output_value': str(output_value),
-                    'score': float(similarity)
+                    'output_value': str(pred['item_name']),  # Use item name instead of ID
+                    'score': float(pred['predicted_rating'])
                 })
             
+            print(f"Generated {len(recommendations)} recommendations")
             return recommendations
             
         except Exception as e:
-            print(f"Error generating recommendations: {str(e)}")
-            import traceback
-            print(traceback.format_exc())
+            print(f"Error in _generate_collaborative_recommendations: {str(e)}")
             raise
+
+    def _generate_content_recommendations(self, inputs, n_recommendations):
+        """Existing content-based recommendation method"""
+        # Your existing content-based recommendation code here
+        pass
