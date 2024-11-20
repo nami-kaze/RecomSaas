@@ -570,6 +570,19 @@ function handleCompileModel() {
         if (data.success) {
             console.log('Model compiled successfully:', data);
             
+            // Show export button after successful compilation
+            const exportButton = document.getElementById('export-model-btn');
+            if (exportButton) {
+                exportButton.style.display = 'block';
+            }
+            
+            // Store model configuration for export
+            window.modelConfig = {
+                system_type: selectedModel,
+                input_columns: selectedInputs,
+                output_column: selectedOutput
+            };
+            
             // Store session ID in both window and localStorage
             window.currentSessionId = data.session_id;
             localStorage.setItem('currentSessionId', data.session_id);
@@ -963,5 +976,45 @@ document.addEventListener('DOMContentLoaded', function() {
             
             getRecommendations(inputValue);
         });
+    }
+});
+
+// Add this new function for handling export
+function exportModelCode() {
+    const config = window.modelConfig;
+    if (!config) {
+        alert('Please compile the model first');
+        return;
+    }
+
+    fetch('http://127.0.0.1:5000/export-model', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(config)
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'recommender_model.py';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    })
+    .catch(error => {
+        console.error('Export error:', error);
+        alert('Error exporting model code');
+    });
+}
+
+// Add event listener for export button
+document.addEventListener('DOMContentLoaded', () => {
+    const exportButton = document.getElementById('export-model-btn');
+    if (exportButton) {
+        exportButton.addEventListener('click', exportModelCode);
     }
 });

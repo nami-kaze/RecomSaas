@@ -1746,3 +1746,27 @@ body, .container, .left, .middle, .button, .input input[type="text"] {
     background: rgba(var(--error-color-rgb), 0.1);
     border-radius: 6px;
 }
+
+.export-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 16px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.export-button:hover {
+    background-color: var(--button-hover-bg);
+}
+
+.export-button svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+}
