@@ -125,10 +125,17 @@ function updateThemeIcon(theme) {
 
 // File Upload Handling
 function initializeFileUpload() {
-    // Ensure fileInput exists and add event listener
-    if (fileInput) {
-        fileInput.addEventListener('change', handleFileSelect);
-    }
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+
+    if (!dropZone || !fileInput) return;
+
+    // Remove existing event listeners
+    dropZone.removeEventListener('drop', handleDrop);
+    dropZone.removeEventListener('click', handleDropZoneClick);
+
+    // Add click event listener
+    dropZone.addEventListener('click', handleDropZoneClick);
 
     // Prevent default drag behaviors
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -136,16 +143,10 @@ function initializeFileUpload() {
         document.body.addEventListener(eventName, preventDefaults, false);
     });
 
-    // Highlight drop zone when item is dragged over it
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, highlight, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, unhighlight, false);
-    });
-
-    // Handle dropped files
+    // Handle drag and drop events
+    dropZone.addEventListener('dragenter', highlight, false);
+    dropZone.addEventListener('dragover', highlight, false);
+    dropZone.addEventListener('dragleave', unhighlight, false);
     dropZone.addEventListener('drop', handleDrop, false);
 }
 
@@ -243,73 +244,85 @@ function getCSVHeaders(csvData) {
     return [];
 }
 
-function populateCheckboxes(headers) {
-    // Clear both input and output containers
-    const inputCheckboxContainer = document.getElementById('input-checkbox-container');
-    const outputCheckboxContainer = document.getElementById('output-checkbox-container');
-    inputCheckboxContainer.innerHTML = '';
-    outputCheckboxContainer.innerHTML = '';
+function populateCheckboxes(columns) {
+    console.log('populateCheckboxes called with:', columns);
+    
+    const inputContainer = document.getElementById('input-checkbox-container');
+    const outputContainer = document.getElementById('output-checkbox-container');
+    
+    if (!inputContainer || !outputContainer) {
+        console.error('Containers not found:', {
+            inputContainer: !!inputContainer,
+            outputContainer: !!outputContainer
+        });
+        return;
+    }
+    
+    // Clear existing checkboxes
+    inputContainer.innerHTML = '';
+    outputContainer.innerHTML = '';
+    
+    try {
+        // Handle both single file and multiple files cases
+        if (Array.isArray(columns)) {
+            console.log('Processing single file columns');
+            columns.forEach(column => {
+                console.log('Creating checkbox for column:', column);
+                // Create input checkbox
+                const inputWrapper = document.createElement('div');
+                inputWrapper.className = 'checkbox-wrapper';
+                inputWrapper.innerHTML = `
+                    <input type="checkbox" id="input-${column}" name="input-columns" value="${column}">
+                    <label for="input-${column}">${column}</label>
+                `;
+                inputContainer.appendChild(inputWrapper);
 
-    headers.forEach(header => {
-        if (header) {
-            // Create checkbox for input variables
-            const inputCheckbox = document.createElement('input');
-            inputCheckbox.type = 'checkbox';
-            inputCheckbox.value = header;
-            inputCheckbox.id = `input-checkbox-${header}`;
+                // Create output radio
+                const outputWrapper = document.createElement('div');
+                outputWrapper.className = 'checkbox-wrapper';
+                outputWrapper.innerHTML = `
+                    <input type="radio" id="output-${column}" name="output-column" value="${column}">
+                    <label for="output-${column}">${column}</label>
+                `;
+                outputContainer.appendChild(outputWrapper);
+            });
+        } else {
+            console.log('Processing multiple files columns');
+            Object.entries(columns).forEach(([filename, fileColumns]) => {
+                console.log(`Processing file: ${filename} with columns:`, fileColumns);
+                fileColumns.forEach(column => {
+                    // Create input checkbox
+                    const inputWrapper = document.createElement('div');
+                    inputWrapper.className = 'checkbox-wrapper';
+                    inputWrapper.innerHTML = `
+                        <input type="checkbox" 
+                               id="input-${filename}-${column}" 
+                               name="input-columns" 
+                               value="${column}" 
+                               data-file="${filename}">
+                        <label for="input-${filename}-${column}">${column} (${filename})</label>
+                    `;
+                    inputContainer.appendChild(inputWrapper);
 
-            const inputLabel = document.createElement('label');
-            inputLabel.htmlFor = `input-checkbox-${header}`;
-            inputLabel.textContent = header;
-
-            const inputWrapper = document.createElement('div');
-            inputWrapper.className = 'checkbox-wrapper';
-            inputWrapper.appendChild(inputCheckbox);
-            inputWrapper.appendChild(inputLabel);
-            inputCheckboxContainer.appendChild(inputWrapper);
-
-            // Create radio button for output variables
-            const outputRadio = document.createElement('input');
-            outputRadio.type = 'radio';
-            outputRadio.name = 'output-variable'; // Same name makes them mutually exclusive
-            outputRadio.value = header;
-            outputRadio.id = `output-radio-${header}`;
-
-            const outputLabel = document.createElement('label');
-            outputLabel.htmlFor = `output-radio-${header}`;
-            outputLabel.textContent = header;
-
-            const outputWrapper = document.createElement('div');
-            outputWrapper.className = 'radio-wrapper';
-            outputWrapper.appendChild(outputRadio);
-            outputWrapper.appendChild(outputLabel);
-            outputCheckboxContainer.appendChild(outputWrapper);
+                    // Create output radio
+                    const outputWrapper = document.createElement('div');
+                    outputWrapper.className = 'checkbox-wrapper';
+                    outputWrapper.innerHTML = `
+                        <input type="radio" 
+                               id="output-${filename}-${column}" 
+                               name="output-column" 
+                               value="${column}" 
+                               data-file="${filename}">
+                        <label for="output-${filename}-${column}">${column} (${filename})</label>
+                    `;
+                    outputContainer.appendChild(outputWrapper);
+                });
+            });
         }
-    });
-
-    // Add event listener to prevent selecting same variable as both input and output
-    const allInputCheckboxes = inputCheckboxContainer.querySelectorAll('input[type="checkbox"]');
-    const allOutputRadios = outputCheckboxContainer.querySelectorAll('input[type="radio"]');
-
-    allInputCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const correspondingRadio = document.querySelector(`#output-radio-${this.value}`);
-            if (this.checked && correspondingRadio.checked) {
-                correspondingRadio.checked = false;
-            }
-        });
-    });
-
-    allOutputRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.checked) {
-                const correspondingCheckbox = document.querySelector(`#input-checkbox-${this.value}`);
-                if (correspondingCheckbox.checked) {
-                    correspondingCheckbox.checked = false;
-                }
-            }
-        });
-    });
+        console.log('Finished populating checkboxes');
+    } catch (error) {
+        console.error('Error while populating checkboxes:', error);
+    }
 }
 
 // Drag and Drop Utilities
@@ -1018,3 +1031,295 @@ document.addEventListener('DOMContentLoaded', () => {
         exportButton.addEventListener('click', exportModelCode);
     }
 });
+
+// Add this function to handle model selection change
+function handleModelSelectionChange() {
+    const modelSelect = document.getElementById('file-model-select');
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const inputContainer = document.getElementById('input-checkbox-container');
+    const outputContainer = document.getElementById('output-checkbox-container');
+    const compileButton = document.getElementById('file-compile-btn');
+    const exportButton = document.getElementById('export-model-btn');
+    
+    // Clear any existing data
+    if (inputContainer) inputContainer.innerHTML = '';
+    if (outputContainer) outputContainer.innerHTML = '';
+    if (compileButton) compileButton.disabled = false;
+    if (exportButton) exportButton.style.display = 'none';
+    
+    // Reset file input
+    if (fileInput) fileInput.value = '';
+    
+    if (!modelSelect.value) {
+        dropZone.classList.add('disabled');
+        fileInput.disabled = true;
+        dropZone.innerHTML = `
+            <input type="file" id="file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(event)" disabled>
+            <div class="icon">📁</div>
+            <p>Please select a model type first</p>
+        `;
+        return;
+    }
+
+    dropZone.classList.remove('disabled');
+    fileInput.disabled = false;
+
+    const selectedModel = modelSelect.value.toLowerCase().split(' ')[0];
+    
+    if (selectedModel === 'content-based') {
+        fileInput.removeAttribute('multiple');
+        dropZone.innerHTML = `
+            <input type="file" id="file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+            <div class="icon">📁</div>
+            <p>Drag and drop your CSV file here or click to browse</p>
+        `;
+    } else {
+        fileInput.setAttribute('multiple', 'multiple');
+        dropZone.innerHTML = `
+            <input type="file" id="file-input" accept=".csv" multiple style="display: none;" onchange="handleMultipleFileSelect(event)">
+            <div class="icon">📁</div>
+            <p>Upload your CSV files:</p>
+            <p class="sub-text">1. User-Item Interactions Dataset</p>
+            <p class="sub-text">2. Item Features Dataset (Optional)</p>
+            <p class="sub-text">3. User Features Dataset (Optional)</p>
+        `;
+    }
+    
+    // Clear any stored session data
+    window.currentSessionId = null;
+    localStorage.removeItem('currentSessionId');
+    
+    // Reinitialize file upload handlers
+    initializeFileUpload();
+}
+
+// Add event listener for model selection
+document.addEventListener('DOMContentLoaded', () => {
+    const modelSelect = document.getElementById('file-model-select');
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    
+    if (modelSelect) {
+        // Initially disable drop zone
+        dropZone.classList.add('disabled');
+        fileInput.disabled = true;
+        
+        modelSelect.addEventListener('change', handleModelSelectionChange);
+    }
+});
+
+// Handle multiple file selection
+function handleMultipleFileSelect(event) {
+    console.log('handleMultipleFileSelect triggered');
+    const files = event.target.files;
+    const dropZone = document.getElementById('drop-zone');
+    
+    if (!files || files.length === 0) {
+        console.log('No files selected');
+        return;
+    }
+    
+    console.log(`Number of files selected: ${files.length}`);
+    console.log('Selected files:', Array.from(files).map(f => f.name));
+    
+    // Create FormData object
+    const formData = new FormData();
+    
+    // Add all files to FormData
+    Array.from(files).forEach((file, index) => {
+        formData.append(`file${index}`, file);
+        console.log(`Added to FormData: file${index}`, file.name);
+    });
+
+    // Update drop zone UI
+    dropZone.innerHTML = `
+        <div class="icon">📁</div>
+        <div class="selected-files">
+            ${Array.from(files).map(file => `
+                <p class="file-name">⌛ ${file.name}</p>
+            `).join('')}
+        </div>
+        <p class="sub-text">Uploading...</p>
+    `;
+
+    console.log('Making fetch request to /upload-multiple');
+    // Send files to server
+    fetch('/upload-multiple', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Received response:', response.status);
+        return response.json().then(data => {
+            console.log('Response data:', data);
+            return data;
+        });
+    })
+    .then(data => {
+        console.log('Processing response data');
+        if (!data.success) {
+            throw new Error(data.error || 'Upload failed');
+        }
+        
+        // Update drop zone to show success
+        dropZone.innerHTML = `
+            <div class="icon">📁</div>
+            <div class="selected-files">
+                ${Array.from(files).map(file => `
+                    <p class="file-name">✓ ${file.name}</p>
+                `).join('')}
+            </div>
+            <p class="sub-text">Files uploaded successfully</p>
+        `;
+        
+        console.log('Columns data received:', data.columns);
+        // Populate checkboxes with columns
+        if (data.columns) {
+            populateCheckboxes(data.columns);
+        } else {
+            console.error('No columns data in response');
+        }
+    })
+    .catch(error => {
+        console.error('Error in upload process:', error);
+        // Show error in drop zone
+        dropZone.innerHTML = `
+            <div class="icon">❌</div>
+            <p>Upload failed: ${error.message}</p>
+            <p class="sub-text">Click to try again</p>
+        `;
+    });
+}
+
+// Add this function to handle multiple file upload
+function uploadMultipleFiles(formData) {
+    fetch('http://127.0.0.1:5000/upload-multiple', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.currentSessionId = data.session_id;
+            localStorage.setItem('currentSessionId', data.session_id);
+            
+            // Update checkboxes for all datasets
+            if (data.columns) {
+                populateMultipleDatasetCheckboxes(data.columns);
+            }
+        } else {
+            throw new Error(data.error || 'Upload failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(`Upload failed: ${error.message}`);
+    });
+}
+
+// Add helper functions
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function highlight(e) {
+    const dropZone = document.getElementById('drop-zone');
+    if (dropZone.classList.contains('active')) {
+        dropZone.classList.add('drag-over');
+    }
+}
+
+function unhighlight(e) {
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.classList.remove('drag-over');
+}
+
+function handleDropZoneClick(e) {
+    const fileInput = document.getElementById('file-input');
+    const dropZone = document.getElementById('drop-zone');
+    
+    // Only proceed if drop zone is not disabled
+    if (!dropZone.classList.contains('disabled') && fileInput) {
+        fileInput.click();
+    }
+}
+
+function handleDrop(e) {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    
+    if (!dropZone.classList.contains('active')) {
+        return;
+    }
+
+    const dt = e.dataTransfer;
+    const files = dt.files;
+
+    if (fileInput.multiple) {
+        handleMultipleFileSelect({ target: { files: files } });
+    } else {
+        handleFileSelect({ target: { files: [files[0]] } });
+    }
+}
+
+function populateMultipleDatasetCheckboxes(columnsData) {
+    const inputContainer = document.getElementById('input-checkbox-container');
+    const outputContainer = document.getElementById('output-checkbox-container');
+    
+    if (!inputContainer || !outputContainer) {
+        console.error('Checkbox containers not found');
+        return;
+    }
+    
+    // Clear existing checkboxes
+    inputContainer.innerHTML = '';
+    outputContainer.innerHTML = '';
+    
+    // Combine all columns from all files
+    let allColumns = [];
+    Object.entries(columnsData).forEach(([filename, columns]) => {
+        columns.forEach(column => {
+            // Add filename prefix to avoid duplicate column names
+            allColumns.push({
+                name: column,
+                file: filename
+            });
+        });
+    });
+    
+    // Create input checkboxes
+    allColumns.forEach(column => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'checkbox-wrapper';
+        wrapper.innerHTML = `
+            <input type="checkbox" 
+                   id="input-${column.file}-${column.name}" 
+                   name="input-columns" 
+                   value="${column.name}"
+                   data-file="${column.file}">
+            <label for="input-${column.file}-${column.name}">
+                ${column.name} (${column.file})
+            </label>
+        `;
+        inputContainer.appendChild(wrapper);
+    });
+    
+    // Create output radio buttons
+    allColumns.forEach(column => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'checkbox-wrapper';
+        wrapper.innerHTML = `
+            <input type="radio" 
+                   id="output-${column.file}-${column.name}" 
+                   name="output-column" 
+                   value="${column.name}"
+                   data-file="${column.file}">
+            <label for="output-${column.file}-${column.name}">
+                ${column.name} (${column.file})
+            </label>
+        `;
+        outputContainer.appendChild(wrapper);
+    });
+}

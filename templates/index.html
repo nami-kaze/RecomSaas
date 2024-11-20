@@ -69,10 +69,10 @@
             <!-- File Upload Section -->
             <div id="file-upload" class="upload-section">
                 <!-- File Drop Zone -->
-                <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-                    <input type="file" id="file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+                <div class="drop-zone disabled" id="drop-zone">
+                    <input type="file" id="file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(event)" disabled>
                     <div class="icon">📁</div>
-                    <p>Drag and drop your CSV file here or click to browse</p>
+                    <p>Please select a model type first</p>
                 </div>
 
                 <!-- File Upload Model Selection -->

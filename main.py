@@ -6,6 +6,7 @@ import pandas as pd
 from recommender import RecommenderSystem
 import threading
 import io
+import uuid
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -328,6 +329,62 @@ class RecommenderSystem:
         
     except Exception as e:
         print(f"Error in export_model: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/upload-multiple', methods=['POST'])
+def upload_multiple():
+    try:
+        print("\n=== Starting multiple file upload process ===")
+        print("Files in request:", list(request.files.keys()))
+        
+        if not request.files:
+            print("No files found in request")
+            return jsonify({'success': False, 'error': 'No files uploaded'})
+        
+        dataframes = {}
+        all_columns = {}
+        
+        for key in request.files:
+            file = request.files[key]
+            if file and file.filename:
+                print(f"\nProcessing file: {file.filename}")
+                try:
+                    # Read CSV file
+                    df = pd.read_csv(file)
+                    print(f"Successfully read file. Shape: {df.shape}")
+                    print(f"Columns: {df.columns.tolist()}")
+                    
+                    dataframes[file.filename] = df
+                    all_columns[file.filename] = df.columns.tolist()
+                except Exception as e:
+                    print(f"Error processing file {file.filename}: {str(e)}")
+                    return jsonify({'success': False, 'error': f'Error processing {file.filename}: {str(e)}'})
+        
+        if not dataframes:
+            print("No valid CSV files processed")
+            return jsonify({'success': False, 'error': 'No valid CSV files found'})
+        
+        # Generate session ID
+        session_id = str(uuid.uuid4())
+        print(f"\nGenerated session ID: {session_id}")
+        
+        response_data = {
+            'success': True,
+            'session_id': session_id,
+            'columns': all_columns,
+            'message': 'Files uploaded successfully'
+        }
+        
+        print("\nSending response data:")
+        print(json.dumps(response_data, indent=2))
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"\nError in upload_multiple: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)
